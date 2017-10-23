@@ -11,6 +11,11 @@ To get result on your own images, use the following command:
 ```
 python inference.py --img-path=./input/test.png
 ```
+List of Args:
+```
+--model=train    - To select train_30k model (Default)
+--model=trainval - To select trainval_90k model
+```
 Inference time:  ~0.02s, I have no idea why it's faster than caffe implementation 
 
 ## Evaluation
@@ -32,8 +37,8 @@ python evaluate.py
 ```
 List of Args:
 ```
---train-model    - To select train_30k model
---trainval-model - To select trainval_90k model
+--model=train    - To select train_30k model (Default)
+--model=trainval - To select trainval_90k model
 --measure-time   - Calculate inference time (e.q subtract preprocessing time)
 ```
 ## Image Result
