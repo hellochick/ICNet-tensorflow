@@ -35,10 +35,10 @@ def get_arguments():
 
     parser.add_argument("--measure-time", action="store_true",
                         help="whether to measure inference time")
-    parser.add_argument("--train-model", action="store_true",
-                        help="restore from train_30k.npy")
-    parser.add_argument("--trainval-model", action="store_true",
-                        help="restore from trainval_90k.npy")    
+    parser.add_argument("--model", type=str, default=model,
+                        help="Model to restore.",
+                        choices=['train', 'trainval'],
+                        required=True)
     parser.add_argument("--save-dir", type=str, default=SAVE_DIR,
                         help="Path to save output.")
     parser.add_argument("--flipped-eval", action="store_true",
@@ -115,14 +115,11 @@ def main():
 
     restore_var = tf.global_variables()
 
-    if args.train_model:
+    if args.model == 'train':
         print('Restore from train30k model...')
         net.load(model_train30k, sess)
-    elif args.trainval_model:
+    elif args.model == 'trainval':
         print('Restore from trainval90k model...')
-        net.load(model_trainval90k, sess)
-    else:
-        print('You didnot specify model to restore, restore from trainval90k model by default...')
         net.load(model_trainval90k, sess)
         
     # Start queue threads.
