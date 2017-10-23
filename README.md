@@ -39,5 +39,5 @@ List of Args:
 ## Image Result
 Input image                |  Output image
 :-------------------------:|:-------------------------:
-![](https://github.com/hellochick/ICNet/blob/master/input/test.png)  |  ![](https://github.com/hellochick/ICNet/blob/master/output/test.png)
-![](https://github.com/hellochick/ICNet/blob/master/input/test2.png)  |  ![](https://github.com/hellochick/ICNet/blob/master/output/test2.png)
+![](https://github.com/hellochick/ICNet_tensorflow/blob/master/input/test.png)  |  ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/output/test.png)
+![](https://github.com/hellochick/ICNet_tensorflow/blob/master/input/test2.png)  |  ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/output/test2.png)
