@@ -41,3 +41,15 @@ Input image                |  Output image
 :-------------------------:|:-------------------------:
 ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/input/test.png)  |  ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/output/test.png)
 ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/input/test2.png)  |  ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/output/test2.png)
+
+## Citation
+    @article{zhao2017icnet,
+      author = {Hengshuang Zhao and
+                Xiaojuan Qi and
+                Xiaoyong Shen and
+                Jianping Shi and
+                Jiaya Jia},
+      title = {ICNet for Real-Time Semantic Segmentation on High-Resolution Images},
+      journal={arXiv preprint arXiv:1704.08545},
+      year = {2017}
+    }
