@@ -18,7 +18,7 @@ Perform in single-scaled model on the cityscapes validation datase.
 
 | Model | Accuracy |  Missing accuracy |
 |:-----------:|:----------:|:---------:|
-| train_30k   | **65.3/67.7** | **2.4% |
+| train_30k   | **65.3/67.7** | **2.4%** |
 | trainval_90k| **78.06%**    | None |
 
 To get evaluation result, you need to download Cityscape dataset from [Official website](https://www.cityscapes-dataset.com/) first. Then change `DATA_DIRECTORY` to your dataset path in `evaluate.py`:
