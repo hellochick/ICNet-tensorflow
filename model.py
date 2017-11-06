@@ -168,21 +168,22 @@ class ICNet(Network):
              .relu(name='conv5_3/relu'))
 
         shape = self.layers['conv5_3/relu'].get_shape().as_list()[1:3]
-
+        h, w = shape
+        
         (self.feed('conv5_3/relu')
-             .avg_pool(32, 64, 32, 64, name='conv5_3_pool1')
+             .avg_pool(h, w, h, w, name='conv5_3_pool1')
              .resize_bilinear(shape, name='conv5_3_pool1_interp'))
 
         (self.feed('conv5_3/relu')
-             .avg_pool(16, 32, 16, 32, name='conv5_3_pool2')
+             .avg_pool(h/2, w/2, h/2, w/2, name='conv5_3_pool2')
              .resize_bilinear(shape, name='conv5_3_pool2_interp'))
 
         (self.feed('conv5_3/relu')
-             .avg_pool(12, 24, 10, 20, name='conv5_3_pool3')
+             .avg_pool(h/3, w/3, h/3, w/3, name='conv5_3_pool3')
              .resize_bilinear(shape, name='conv5_3_pool3_interp'))
 
         (self.feed('conv5_3/relu')
-             .avg_pool(8, 16, 5, 10, name='conv5_3_pool6')
+             .avg_pool(h/4, w/4, h/4, w/4, name='conv5_3_pool6')
              .resize_bilinear(shape, name='conv5_3_pool6_interp'))
 
         (self.feed('conv5_3/relu',

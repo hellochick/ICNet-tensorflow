@@ -186,6 +186,7 @@ class Network(object):
     @layer
     def avg_pool(self, input, k_h, k_w, s_h, s_w, name, padding=DEFAULT_PADDING):
         self.validate_padding(padding)
+
         output = tf.nn.avg_pool(input,
                               ksize=[1, k_h, k_w, 1],
                               strides=[1, s_h, s_w, 1],

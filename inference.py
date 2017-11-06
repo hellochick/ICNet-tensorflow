@@ -7,12 +7,12 @@ import time
 from PIL import Image
 import tensorflow as tf
 import numpy as np
+from scipy import misc
 
 from model import ICNet
 from tools import decode_labels
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
-input_size = [1024, 2048]
 num_classes = 19
 
 model_train30k = './model/icnet_cityscapes_train_30k.npy'
@@ -58,14 +58,8 @@ def load_img(img_path):
         sys.exit(0)
 
     filename = img_path.split('/')[-1]
-    ext = filename.split('.')[-1]
-
-    if ext.lower() == 'png':
-        img = tf.image.decode_png(tf.read_file(img_path), channels=3)
-    elif ext.lower() == 'jpg':
-        img = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
-    else:
-        print('cannot process {0} file.'.format(file_type))
+    img = misc.imread(img_path, mode='RGB')
+    print('input image shape: ', img.shape)
 
     return img, filename
 
@@ -76,23 +70,43 @@ def preprocess(img):
     # Extract mean.
     img -= IMG_MEAN
     
-    img.set_shape([1024, 2048, 3]) 
     img = tf.expand_dims(img, dim=0)
 
     return img
+
+def check_input(img):
+    ori_h, ori_w = img.get_shape().as_list()[1:3]
+
+    if ori_h % 32 != 0 or ori_w % 32 != 0:
+        new_h = (int(ori_h/32) + 1) * 32
+        new_w = (int(ori_w/32) + 1) * 32
+        shape = [new_h, new_w]
+
+        img = tf.image.pad_to_bounding_box(img, 0, 0, new_h, new_w)
+        
+        print('Image shape cannot divided by 32, padding to ({0}, {1})'.format(new_h, new_w))
+    else:
+        shape = [ori_h, ori_w]
+
+    return img, shape
 
 def main():
     args = get_arguments()
     
     img, filename = load_img(args.img_path)
-    img = preprocess(img)
-    
+    shape = img.shape[0:2]
+
+    x = tf.placeholder(dtype=tf.float32, shape=img.shape)
+    img_tf = preprocess(x)
+    img_tf, n_shape = check_input(img_tf)
+
     # Create network.
-    net = ICNet({'data': img}, num_classes=num_classes)
+    net = ICNet({'data': img_tf}, num_classes=num_classes)
     raw_output = net.layers['conv6_cls']
     
     # Predictions.
-    raw_output_up = tf.image.resize_bilinear(raw_output, size=input_size, align_corners=True)
+    raw_output_up = tf.image.resize_bilinear(raw_output, size=n_shape, align_corners=True)
+    raw_output_up = tf.image.crop_to_bounding_box(raw_output_up, 0, 0, shape[0], shape[1])
     raw_output_up = tf.argmax(raw_output_up, dimension=3)
     pred = tf.expand_dims(raw_output_up, dim=3)
 
@@ -113,7 +127,7 @@ def main():
         print('Restore from trainval90k model...')
         net.load(model_trainval90k, sess)
 
-    preds = sess.run(pred)
+    preds = sess.run(pred, feed_dict={x: img})
 
     msk = decode_labels(preds, num_classes=num_classes)
     im = Image.fromarray(msk[0])
