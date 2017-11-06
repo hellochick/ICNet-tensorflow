@@ -59,7 +59,7 @@ def calculate_time(sess, net):
     sess.run(net.layers['conv6_cls'])
     total_time = time.time() - start
 
-    inference_time = total_time
+    inference_time = total_time - data_time
 
     time_list.append(inference_time)
     print('average inference time: {}'.format(np.mean(time_list)))
