@@ -4,7 +4,8 @@
   
 ## Update
 #### 2017/11/13:
-Add `bnnomerge vesion` which reparing for training phase. Choose different model using flag `--model=train, train_bn, trainval, trainval_bn` (Upload model in google drive). 
+1. Add `bnnomerge model` which reparing for training phase. Choose different model using flag `--model=train, train_bn, trainval, trainval_bn` (Upload model in google drive).
+2. Change `tf.nn.batch_normalization` to `tf.layers.batch_normalization`.
 
 #### 2017/11/07:
 `Support every image size larger than 128x256` by changing the avg pooling ksize and strides in the pyramid module. If input image size cannot divided by 32, it will be padded in to mutiple of 32.
