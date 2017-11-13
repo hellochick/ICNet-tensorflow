@@ -9,7 +9,7 @@ import tensorflow as tf
 import numpy as np
 from scipy import misc
 
-from model import ICNet
+from model import ICNet, ICNet_BN
 from tools import decode_labels
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
@@ -17,7 +17,8 @@ num_classes = 19
 
 model_train30k = './model/icnet_cityscapes_train_30k.npy'
 model_trainval90k = './model/icnet_cityscapes_trainval_90k.npy'
-model = 'train'
+model_train30k_bn = './model/icnet_cityscapes_train_30k_bnnomerge.npy'
+model_trainval90k_bn = './model/icnet_cityscapes_trainval_90k_bnnomerge.npy'
 
 SAVE_DIR = './output/'
 
@@ -26,14 +27,15 @@ def get_arguments():
     parser.add_argument("--img-path", type=str, default='',
                         help="Path to the RGB image file.",
                         required=True)
-    parser.add_argument("--model", type=str, default=model,
-                        help="Model to restore.",
-                        choices=['train', 'trainval'],
+    parser.add_argument("--model", type=str, default='',
+                        help="Model to use.",
+                        choices=['train', 'trainval', 'train_bn', 'trainval_bn'],
                         required=True)
     parser.add_argument("--save-dir", type=str, default=SAVE_DIR,
                         help="Path to save output.")
     parser.add_argument("--flipped-eval", action="store_true",
                         help="whether to evaluate with flipped img.")
+
 
     return parser.parse_args()
 
@@ -101,7 +103,11 @@ def main():
     img_tf, n_shape = check_input(img_tf)
 
     # Create network.
-    net = ICNet({'data': img_tf}, num_classes=num_classes)
+    if args.model[-2:] == 'bn':
+        net = ICNet_BN({'data': img_tf}, num_classes=num_classes)
+    else:
+        net = ICNet({'data': img_tf}, num_classes=num_classes)
+
     raw_output = net.layers['conv6_cls']
     
     # Predictions.
@@ -126,6 +132,12 @@ def main():
     elif args.model == 'trainval':
         print('Restore from trainval90k model...')
         net.load(model_trainval90k, sess)
+    elif args.model == 'train_bn':
+        print('Restore from train30k bnnomerge model...')
+        net.load(model_train30k_bn, sess)
+    elif args.model == 'trainval_bn':
+        print('Restore from trainval90k bnnomerge model...')
+        net.load(model_trainval90k_bn, sess)
 
     preds = sess.run(pred, feed_dict={x: img})
 
