@@ -107,7 +107,7 @@ def main():
         net = ICNet_BN({'data': img_tf}, num_classes=num_classes)
     else:
         net = ICNet({'data': img_tf}, num_classes=num_classes)
-
+        
     raw_output = net.layers['conv6_cls']
     
     # Predictions.

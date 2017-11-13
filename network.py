@@ -5,6 +5,11 @@ slim = tf.contrib.slim
 DEFAULT_PADDING = 'VALID'
 DEFAULT_DATAFORMAT = 'NHWC'
 layer_name = []
+BN_param_map = {'scale':    'gamma',
+                'offset':   'beta',
+                'variance': 'moving_variance',
+                'mean':     'moving_mean'}
+                
 def layer(op):
     '''Decorator for composable network layers.'''
 
@@ -41,6 +46,7 @@ class Network(object):
         # Mapping from layer names to layers
         self.layers = dict(inputs)
         # If true, the resulting variables are set as trainable
+        self.is_training = is_training
         self.trainable = trainable
         # Switch variable for dropout
         self.use_dropout = tf.placeholder_with_default(tf.constant(1.0),
@@ -64,6 +70,9 @@ class Network(object):
             with tf.variable_scope(op_name, reuse=True):
                 for param_name, data in data_dict[op_name].iteritems():
                     try:
+                        if 'bn' in op_name:
+                            param_name = BN_param_map[param_name]
+
                         var = tf.get_variable(param_name)
                         session.run(var.assign(data))
                     except ValueError:
@@ -243,6 +252,7 @@ class Network(object):
 
     @layer
     def batch_normalization(self, input, name, scale_offset=True, relu=False):
+        """
         # NOTE: Currently, only inference is supported
         with tf.variable_scope(name) as scope:
             shape = [input.get_shape()[-1]]
@@ -264,7 +274,19 @@ class Network(object):
             if relu:
                 output = tf.nn.relu(output)
             return output
+        """
+        output = tf.layers.batch_normalization(
+                    input,
+                    momentum=0.95,
+                    epsilon=1e-5,
+                    training=self.is_training,
+                    name=name
+                )
 
+        if relu:
+            output = tf.nn.relu(output)
+
+        return output
 
     @layer
     def dropout(self, input, keep_prob, name):
