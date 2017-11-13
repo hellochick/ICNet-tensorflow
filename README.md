@@ -3,6 +3,9 @@
   This is an implementation of ICNet in TensorFlow for semantic segmentation on the [cityscapes](https://www.cityscapes-dataset.com/) dataset. We first convert weight from [Original Code](https://github.com/hszhao/ICNet) by using [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow) framework.
   
 ## Update
+#### 2017/11/13:
+Add `bnnomerge vesion` which reparing for training phase. Choose different model using flag `--model=train, train_bn, trainval, trainval_bn` (Upload model in google drive). 
+
 #### 2017/11/07:
 `Support every image size larger than 128x256` by changing the avg pooling ksize and strides in the pyramid module. If input image size cannot divided by 32, it will be padded in to mutiple of 32.
 
@@ -18,8 +21,10 @@ python inference.py --img-path=./input/test.png
 ```
 List of Args:
 ```
---model=train    - To select train_30k model (Default)
---model=trainval - To select trainval_90k model
+--model=train       - To select train_30k model (Default)
+--model=trainval    - To select trainval_90k model
+--model=train_bn    - To select train_30k_bn model
+--model=trainval_bn - To select trainval_90k_bn model
 ```
 Inference time:  ~0.02s, I have no idea why it's faster than caffe implementation 
 
