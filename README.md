@@ -64,7 +64,7 @@ Input image                |  Output image
 > Note: This implementation is different from the details descibed in ICNet paper, since I did not re-produce model compression part. Instead, we train on the half kernel directly.
 
 ### Step by Step
-*1. Change the `DATA_LIST_PATH`** in line 22, make sure the list contains the absolute path of your data files, in `list.txt`:
+**1. Change the `DATA_LIST_PATH`** in line 22, make sure the list contains the absolute path of your data files, in `list.txt`:
 ```
 /ABSOLUTE/PATH/TO/image /ABSOLUTE/PATH/TO/label
 ```
