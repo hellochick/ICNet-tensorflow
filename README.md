@@ -29,6 +29,7 @@ List of Args:
 --model=trainval    - To select trainval_90k model
 --model=train_bn    - To select train_30k_bn model
 --model=trainval_bn - To select trainval_90k_bn model
+--model=others      - To select your own checkpoint
 ```
 Inference time:  ~0.02s, I have no idea why it's faster than caffe implementation 
 
@@ -88,7 +89,7 @@ LAMBDA1 = 0.16
 LAMBDA2 = 0.4
 LAMBDA3 = 1.0
 ```
-**3.** Run following command and **decide whether to update mean/var or train beta/gamma variable**. Remember to choose model=others.
+**3.** Run following command and **decide whether to update mean/var or train beta/gamma variable**. Remember to choose `--model=others`.
 ```
 python train.py --update-mean-var --train-beta-gamma --model=others
 ```
