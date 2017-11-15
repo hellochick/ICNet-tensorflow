@@ -93,8 +93,8 @@ LAMBDA3 = 1.0
 ```
 python train.py --update-mean-var --train-beta-gamma --model=others
 ```
-### Inference
-Run `python inference.py --img-path=YOUR_OWN_IMAGE --model=others`
+After training the dataset, you can run following command to get the result:
+`python inference.py --img-path=YOUR_OWN_IMAGE --model=others`
 
 ### Result ( inference with my own data )
 
