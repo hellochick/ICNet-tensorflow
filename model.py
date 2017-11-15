@@ -504,3 +504,9 @@ class ICNet_BN(Network):
              .relu(name='sub12_sum/relu')
              .interp(factor=2.0, name='sub12_sum_interp')
              .conv(1, 1, num_classes, 1, 1, biased=True, relu=False, name='conv6_cls'))
+
+        (self.feed('conv5_4_interp')
+             .conv(1, 1, num_classes, 1, 1, biased=True, relu=False, name='sub4_out'))
+
+        (self.feed('sub24_sum_interp')
+             .conv(1, 1, num_classes, 1, 1, biased=True, relu=False, name='sub24_out'))

@@ -24,6 +24,7 @@ model_train30k = './model/icnet_cityscapes_train_30k.npy'
 model_trainval90k = './model/icnet_cityscapes_trainval_90k.npy'
 model_train30k_bn = './model/icnet_cityscapes_train_30k_bnnomerge.npy'
 model_trainval90k_bn = './model/icnet_cityscapes_trainval_90k_bnnomerge.npy'
+snapshot_dir = './snapshots'
 
 num_classes = 19
 ignore_label = 255 # Don't care label
@@ -130,7 +131,7 @@ def main():
     elif args.model == 'trainval_bn':
         print('Restore from trainval90k bnnomerge model...')
         net.load(model_trainval90k_bn, sess)
-        
+
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 

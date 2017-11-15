@@ -13,12 +13,13 @@ from model import ICNet, ICNet_BN
 from tools import decode_labels
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
-num_classes = 19
+num_classes = 27
 
 model_train30k = './model/icnet_cityscapes_train_30k.npy'
 model_trainval90k = './model/icnet_cityscapes_trainval_90k.npy'
 model_train30k_bn = './model/icnet_cityscapes_train_30k_bnnomerge.npy'
 model_trainval90k_bn = './model/icnet_cityscapes_trainval_90k_bnnomerge.npy'
+snapshot_dir = './snapshots'
 
 SAVE_DIR = './output/'
 
@@ -29,7 +30,7 @@ def get_arguments():
                         required=True)
     parser.add_argument("--model", type=str, default='',
                         help="Model to use.",
-                        choices=['train', 'trainval', 'train_bn', 'trainval_bn'],
+                        choices=['train', 'trainval', 'train_bn', 'trainval_bn', 'others'],
                         required=True)
     parser.add_argument("--save-dir", type=str, default=SAVE_DIR,
                         help="Path to save output.")
@@ -105,9 +106,11 @@ def main():
     # Create network.
     if args.model[-2:] == 'bn':
         net = ICNet_BN({'data': img_tf}, num_classes=num_classes)
+    elif args.model == 'others':
+        net = ICNet_BN({'data': img_tf}, num_classes=num_classes)
     else:
         net = ICNet({'data': img_tf}, num_classes=num_classes)
-        
+    
     raw_output = net.layers['conv6_cls']
     
     # Predictions.
@@ -138,9 +141,15 @@ def main():
     elif args.model == 'trainval_bn':
         print('Restore from trainval90k bnnomerge model...')
         net.load(model_trainval90k_bn, sess)
+    else:
+        ckpt = tf.train.get_checkpoint_state(snapshot_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            loader = tf.train.Saver(var_list=restore_var)
+            load_step = int(os.path.basename(ckpt.model_checkpoint_path).split('-')[1])
+            load(loader, sess, ckpt.model_checkpoint_path)
 
     preds = sess.run(pred, feed_dict={x: img})
-
+    
     msk = decode_labels(preds, num_classes=num_classes)
     im = Image.fromarray(msk[0])
     if not os.path.exists(args.save_dir):
