@@ -13,7 +13,7 @@ from model import ICNet, ICNet_BN
 from tools import decode_labels
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
-num_classes = 27
+num_classes = 19
 
 model_train30k = './model/icnet_cityscapes_train_30k.npy'
 model_trainval90k = './model/icnet_cityscapes_trainval_90k.npy'

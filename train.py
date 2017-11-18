@@ -18,8 +18,8 @@ from image_reader import ImageReader
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
 
-BATCH_SIZE = 48
 DATA_LIST_PATH = '/home/yaaaaa0127/ADEChallengeData2016/list/train_list2.txt'
+BATCH_SIZE = 48
 IGNORE_LABEL = 0
 INPUT_SIZE = '480,480'
 LEARNING_RATE = 1e-3
