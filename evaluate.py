@@ -77,6 +77,8 @@ def main():
             DATA_DIRECTORY,
             DATA_LIST_PATH,
             input_size,
+            None,
+            None,
             ignore_label,
             IMG_MEAN,
             coord)

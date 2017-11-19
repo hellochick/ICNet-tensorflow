@@ -65,7 +65,7 @@ class Network(object):
         session: The current TensorFlow session
         ignore_missing: If true, serialized weights for missing layers are ignored.
         '''
-        data_dict = np.load(data_path).item()
+        data_dict = np.load(data_path, encoding='latin1').item()
         for op_name in data_dict:
             with tf.variable_scope(op_name, reuse=True):
                 for param_name, data in data_dict[op_name].iteritems():
@@ -86,7 +86,7 @@ class Network(object):
         assert len(args) != 0
         self.terminals = []
         for fed_layer in args:
-            if isinstance(fed_layer, basestring):
+            if isinstance(fed_layer, str):
                 try:
                     fed_layer = self.layers[fed_layer]
                 except KeyError:
