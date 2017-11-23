@@ -117,7 +117,7 @@ def main():
     raw_output_up = tf.image.resize_bilinear(raw_output, size=n_shape, align_corners=True)
     raw_output_up = tf.image.crop_to_bounding_box(raw_output_up, 0, 0, shape[0], shape[1])
     raw_output_up = tf.argmax(raw_output_up, dimension=3)
-    pred = tf.expand_dims(raw_output_up, dim=3)
+    pred = decode_labels(raw_output_up, shape, num_classes)
 
     # Init tf Session
     config = tf.ConfigProto()
@@ -149,12 +149,10 @@ def main():
             load(loader, sess, ckpt.model_checkpoint_path)
 
     preds = sess.run(pred, feed_dict={x: img})
-    
-    msk = decode_labels(preds, num_classes=num_classes)
-    im = Image.fromarray(msk[0])
+
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
-    im.save(args.save_dir + filename)
+    misc.imsave(args.save_dir + filename, preds[0])
 
 if __name__ == '__main__':
     main()

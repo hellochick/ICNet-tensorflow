@@ -3,40 +3,29 @@ import numpy as np
 from PIL import Image
 import tensorflow as tf
 
-label_colours = [(128, 64, 128), (244, 35, 231), (69, 69, 69)
+label_colours = [[128, 64, 128], [244, 35, 231], [69, 69, 69]
                 # 0 = road, 1 = sidewalk, 2 = building
-                ,(102, 102, 156), (190, 153, 153), (153, 153, 153)
+                ,[102, 102, 156], [190, 153, 153], [153, 153, 153]
                 # 3 = wall, 4 = fence, 5 = pole
-                ,(250, 170, 29), (219, 219, 0), (106, 142, 35)
+                ,[250, 170, 29], [219, 219, 0], [106, 142, 35]
                 # 6 = traffic light, 7 = traffic sign, 8 = vegetation
-                ,(152, 250, 152), (69, 129, 180), (219, 19, 60)
+                ,[152, 250, 152], [69, 129, 180], [219, 19, 60]
                 # 9 = terrain, 10 = sky, 11 = person
-                ,(255, 0, 0), (0, 0, 142), (0, 0, 69)
+                ,[255, 0, 0], [0, 0, 142], [0, 0, 69]
                 # 12 = rider, 13 = car, 14 = truck
-                ,(0, 60, 100), (0, 79, 100), (0, 0, 230)
+                ,[0, 60, 100], [0, 79, 100], [0, 0, 230]
                 # 15 = bus, 16 = train, 17 = motocycle
-                ,(119, 10, 32), (1, 1, 1),  (222, 101, 215)
-
-                ,(20, 60, 80), (220, 79, 89), (20, 20, 230)
-
-                ,(60, 60, 110), (0, 100, 50), (10, 100, 230)
-
-                ,(44, 88, 166)]
+                ,[119, 10, 32], [1, 1, 1]]
                 # 18 = bicycle, 19 = void label
 
-def decode_labels(mask, num_images=1, num_classes=19):
-    n, h, w, c = mask.shape
-    assert(n >= num_images), 'Batch size %d should be greater or equal than number of images to save %d.' % (n, num_images)
-    outputs = np.zeros((num_images, h, w, 3), dtype=np.uint8)
-    for i in range(num_images):
-      img = Image.new('RGB', (len(mask[i, 0]), len(mask[i])))
-      pixels = img.load()
-      for j_, j in enumerate(mask[i, :, :, 0]):
-          for k_, k in enumerate(j):
-              if k < num_classes:
-                  pixels[k_,j_] = label_colours[k]
-      outputs[i] = np.array(img)
-    return outputs
+def decode_labels(mask, img_shape, num_classes):
+    color_mat = tf.constant(label_colours, dtype=tf.float32)
+    onehot_output = tf.one_hot(mask, depth=num_classes+1)
+    onehot_output = tf.reshape(onehot_output, (-1, num_classes+1))
+    pred = tf.matmul(onehot_output, color_mat)
+    pred = tf.reshape(pred, (1, img_shape[0], img_shape[1], 3))
+    
+    return pred
 
 def prepare_label(input_batch, new_size, num_classes, one_hot=True):
     with tf.name_scope('label_encode'):
