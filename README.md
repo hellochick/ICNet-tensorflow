@@ -89,9 +89,9 @@ LAMBDA1 = 0.16
 LAMBDA2 = 0.4
 LAMBDA3 = 1.0
 ```
-**3.** Run following command and **decide whether to update mean/var or train beta/gamma variable**. Remember to choose `--model=others`.
+**3.** Run following command and **decide whether to update mean/var or train beta/gamma variable**.
 ```
-python train.py --update-mean-var --train-beta-gamma --model=others
+python train.py --update-mean-var --train-beta-gamma
 ```
 After training the dataset, you can run following command to get the result:  
 ```
