@@ -51,13 +51,13 @@ def load(saver, sess, ckpt_path):
     saver.restore(sess, ckpt_path)
     print("Restored model parameters from {}".format(ckpt_path))
 
-def calculate_time(sess, net):
+def calculate_time(sess, net, raw_pred):
     start = time.time()
     sess.run(net.layers['data'])
     data_time = time.time() - start
 
     start = time.time()
-    sess.run(net.layers['conv6_cls'])
+    sess.run(raw_pred)
     total_time = time.time() - start
 
     inference_time = total_time - data_time
@@ -99,10 +99,10 @@ def main():
 
     raw_output_up = tf.image.resize_bilinear(raw_output, size=input_size, align_corners=True)
     raw_output_up = tf.argmax(raw_output_up, dimension=3)
-    pred = tf.expand_dims(raw_output_up, dim=3)
+    raw_pred = tf.expand_dims(raw_output_up, dim=3)
 
     # mIoU
-    pred_flatten = tf.reshape(pred, [-1,])
+    pred_flatten = tf.reshape(raw_pred, [-1,])
     raw_gt = tf.reshape(label_batch, [-1,])
     indices = tf.squeeze(tf.where(tf.less_equal(raw_gt, num_classes - 1)), 1)
     gt = tf.cast(tf.gather(raw_gt, indices), tf.int32)
@@ -141,7 +141,7 @@ def main():
         preds, _ = sess.run([pred, update_op])
 
         if step > 0 and args.measure_time:
-            calculate_time(sess, net)
+            calculate_time(sess, net, raw_pred)
 
         if step % 10 == 0:
             print('Finish {0}/{1}'.format(step, num_steps))
