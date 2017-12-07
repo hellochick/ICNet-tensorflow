@@ -31,7 +31,9 @@ List of Args:
 --model=trainval_bn - To select trainval_90k_bn model
 --model=others      - To select your own checkpoint
 ```
-Inference time:  ~0.02s, I have no idea why it's faster than caffe implementation 
+### Inference time
+* **Including time of loading images**: ~0.04s
+* **Excluding time of loading images (Same as described in paper)**: ~0.03s
 
 ## Evaluation
 Perform in single-scaled model on the cityscapes validation datase.
