@@ -18,10 +18,12 @@ from image_reader import ImageReader
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
 
-DATA_LIST_PATH = '/home/yaaaaa0127/ADEChallengeData2016/list/train_list2.txt'
-BATCH_SIZE = 48
-IGNORE_LABEL = 0
-INPUT_SIZE = '480,480'
+# If you want to apply to other datasets, change following three lines
+DATA_LIST_PATH = '/PATH/TO/CITYSCAPES_DATASET' 
+IGNORE_LABEL = 255 # The class number of background
+INPUT_SIZE = '720, 720' # Input size for training
+
+BATCH_SIZE = 16 
 LEARNING_RATE = 1e-3
 MOMENTUM = 0.9
 NUM_CLASSES = 19
