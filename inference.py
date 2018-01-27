@@ -116,7 +116,7 @@ def main():
     # Predictions.
     raw_output_up = tf.image.resize_bilinear(raw_output, size=n_shape, align_corners=True)
     raw_output_up = tf.image.crop_to_bounding_box(raw_output_up, 0, 0, shape[0], shape[1])
-    raw_output_up = tf.argmax(raw_output_up, dimension=3)
+    raw_output_up = tf.argmax(raw_output_up, axis=3)
     pred = decode_labels(raw_output_up, shape, num_classes)
 
     # Init tf Session

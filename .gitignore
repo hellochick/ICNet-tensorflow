@@ -1,0 +1,6 @@
+*.npy
+__pycache__
+*.pyc
+*.prototxt
+.DS_Store
+._.*

@@ -12,7 +12,6 @@ BN_param_map = {'scale':    'gamma',
                 
 def layer(op):
     '''Decorator for composable network layers.'''
-
     def layer_decorated(self, *args, **kwargs):
         # Automatically set a name if not provided.
         name = kwargs.setdefault('name', self.get_unique_name(op.__name__))
@@ -37,8 +36,7 @@ def layer(op):
 
 
 class Network(object):
-
-    def __init__(self, inputs, trainable=True, is_training=False, num_classes=21):
+    def __init__(self, inputs, evaluation=False, trainable=True, is_training=False, num_classes=21):
         # The input nodes for this network
         self.inputs = inputs
         # The current list of terminal nodes
@@ -52,8 +50,9 @@ class Network(object):
         self.use_dropout = tf.placeholder_with_default(tf.constant(1.0),
                                                        shape=[],
                                                        name='use_dropout')
+        self.evaluation = evaluation
 
-        self.setup(is_training, num_classes)
+        self.setup(is_training, num_classes, evaluation)
 
     def setup(self, is_training):
         '''Construct the network. '''
@@ -68,7 +67,7 @@ class Network(object):
         data_dict = np.load(data_path, encoding='latin1').item()
         for op_name in data_dict:
             with tf.variable_scope(op_name, reuse=True):
-                for param_name, data in data_dict[op_name].iteritems():
+                for param_name, data in data_dict[op_name].items():
                     try:
                         if 'bn' in op_name:
                             param_name = BN_param_map[param_name]
@@ -219,6 +218,10 @@ class Network(object):
 
     @layer
     def add(self, inputs, name):
+        ## Deal with adding two images with different size
+        pred = tf.reduce_all(tf.equal(tf.shape(inputs[0]), tf.shape(inputs[1])))
+        inputs[0] = tf.cond(pred, true_fn=lambda: inputs[0], false_fn=lambda: tf.image.resize_bilinear(inputs[0], size=tf.shape(inputs[1])[1:3]))
+        
         return tf.add_n(inputs, name=name)
 
     @layer
@@ -252,29 +255,6 @@ class Network(object):
 
     @layer
     def batch_normalization(self, input, name, scale_offset=True, relu=False):
-        """
-        # NOTE: Currently, only inference is supported
-        with tf.variable_scope(name) as scope:
-            shape = [input.get_shape()[-1]]
-            if scale_offset:
-                scale = self.make_var('scale', shape=shape)
-                offset = self.make_var('offset', shape=shape)
-            else:
-                scale, offset = (None, None)
-            output = tf.nn.batch_normalization(
-                input,
-                mean=self.make_var('mean', shape=shape),
-                variance=self.make_var('variance', shape=shape),
-                offset=offset,
-                scale=scale,
-                # TODO: This is the default Caffe batch norm eps
-                # Get the actual eps from parameters
-                variance_epsilon=1e-5,
-                name=name)
-            if relu:
-                output = tf.nn.relu(output)
-            return output
-        """
         output = tf.layers.batch_normalization(
                     input,
                     momentum=0.95,

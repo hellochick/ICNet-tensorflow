@@ -2,13 +2,13 @@ from network import Network
 import tensorflow as tf
 
 class ICNet(Network):
-    def setup(self, is_training, num_classes):
+    def setup(self, is_training, num_classes, evalutaion):
         (self.feed('data')
              .interp(s_factor=0.5, name='data_sub2')
              .conv(3, 3, 32, 2, 2, biased=True, padding='SAME', relu=True, name='conv1_1_3x3_s2')
              .conv(3, 3, 32, 1, 1, biased=True, padding='SAME', relu=True, name='conv1_2_3x3')
              .conv(3, 3, 64, 1, 1, biased=True, padding='SAME', relu=True, name='conv1_3_3x3')
-             .zero_padding(paddings=1, name='padding1')
+             .zero_padding(paddings=1, name='padding0')
              .max_pool(3, 3, 2, 2, name='pool1_3x3_s2')
              .conv(1, 1, 128, 1, 1, biased=True, relu=False, name='conv2_1_1x1_proj'))
 
@@ -169,23 +169,40 @@ class ICNet(Network):
              .relu(name='conv5_3/relu'))
 
         shape = self.layers['conv5_3/relu'].get_shape().as_list()[1:3]
-        # h, w = shape
+        h, w = shape
 
-        (self.feed('conv5_3/relu')
-            .avg_pool(33, 65, 33, 65, name='conv5_3_pool1')
-            .resize_bilinear(shape, name='conv5_3_pool1_interp'))
+        if self.evaluation: # Change to same configuration as original prototxt
+            (self.feed('conv5_3/relu')
+                .avg_pool(33, 65, 33, 65, name='conv5_3_pool1')
+                .resize_bilinear(shape, name='conv5_3_pool1_interp'))
 
-        (self.feed('conv5_3/relu')
-            .avg_pool(17, 33, 16, 32, name='conv5_3_pool2')
-            .resize_bilinear(shape, name='conv5_3_pool2_interp'))
+            (self.feed('conv5_3/relu')
+                .avg_pool(17, 33, 16, 32, name='conv5_3_pool2')
+                .resize_bilinear(shape, name='conv5_3_pool2_interp'))
 
-        (self.feed('conv5_3/relu')
-            .avg_pool(13, 25, 10, 20, name='conv5_3_pool3')
-            .resize_bilinear(shape, name='conv5_3_pool3_interp'))
+            (self.feed('conv5_3/relu')
+                .avg_pool(13, 25, 10, 20, name='conv5_3_pool3')
+                .resize_bilinear(shape, name='conv5_3_pool3_interp'))
 
-        (self.feed('conv5_3/relu')
-            .avg_pool(8, 15, 5, 10, name='conv5_3_pool6')
-            .resize_bilinear(shape, name='conv5_3_pool6_interp'))
+            (self.feed('conv5_3/relu')
+                .avg_pool(8, 15, 5, 10, name='conv5_3_pool6')
+                .resize_bilinear(shape, name='conv5_3_pool6_interp'))
+        else:       # In inference phase, we support different size of images as input.
+            (self.feed('conv5_3/relu')
+                .avg_pool(h, w, h, w, name='conv5_3_pool1')
+                .resize_bilinear(shape, name='conv5_3_pool1_interp'))
+
+            (self.feed('conv5_3/relu')
+                .avg_pool(h/2, w/2, h/2, w/2, name='conv5_3_pool2')
+                .resize_bilinear(shape, name='conv5_3_pool2_interp'))
+
+            (self.feed('conv5_3/relu')
+                .avg_pool(h/3, w/3, h/3, w/3, name='conv5_3_pool3')
+                .resize_bilinear(shape, name='conv5_3_pool3_interp'))
+
+            (self.feed('conv5_3/relu')
+                .avg_pool(h/6, w/6, h/6, w/6, name='conv5_3_pool6')
+                .resize_bilinear(shape, name='conv5_3_pool6_interp'))
 
         (self.feed('conv5_3/relu',
                    'conv5_3_pool6_interp',
@@ -223,7 +240,7 @@ class ICNet(Network):
              .conv(1, 1, num_classes, 1, 1, biased=True, relu=False, name='conv6_cls'))
 
 class ICNet_BN(Network):
-    def setup(self, is_training, num_classes):
+    def setup(self, is_training, num_classes, evaluation):
         (self.feed('data')
              .interp(factor=0.5, name='data_sub2')
              .conv(3, 3, 32, 2, 2, biased=False, padding='SAME', relu=False, name='conv1_1_3x3_s2')

@@ -7,6 +7,7 @@ import time
 from PIL import Image
 import tensorflow as tf
 import numpy as np
+from tqdm import trange
 
 from model import ICNet, ICNet_BN
 from tools import decode_labels
@@ -17,7 +18,7 @@ input_size = [1025, 2049]
 
 SAVE_DIR = './output/'
 
-DATA_DIRECTORY = ' '
+DATA_DIRECTORY = '/SSD_data/cityscapes_dataset/cityscape/'
 DATA_LIST_PATH = './list/eval_list.txt'
 
 model_train30k = './model/icnet_cityscapes_train_30k.npy'
@@ -87,9 +88,9 @@ def main():
 
     # Create network.
     if args.model[-2:] == 'bn':
-        net = ICNet_BN({'data': image_batch}, num_classes=num_classes)
+        net = ICNet_BN({'data': image_batch}, num_classes=num_classes, evaluation=True)
     else:
-        net = ICNet({'data': image_batch}, num_classes=num_classes)
+        net = ICNet({'data': image_batch}, num_classes=num_classes, evaluation=True)
 
     # Which variables to load.
     restore_var = tf.global_variables()
@@ -98,7 +99,7 @@ def main():
     raw_output = net.layers['conv6_cls']
 
     raw_output_up = tf.image.resize_bilinear(raw_output, size=input_size, align_corners=True)
-    raw_output_up = tf.argmax(raw_output_up, dimension=3)
+    raw_output_up = tf.argmax(raw_output_up, axis=3)
     raw_pred = tf.expand_dims(raw_output_up, dim=3)
 
     # mIoU
@@ -137,14 +138,11 @@ def main():
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
-    for step in range(num_steps):
+    for step in trange(num_steps, desc='evaluation', leave=True):
         preds, _ = sess.run([pred, update_op])
 
         if step > 0 and args.measure_time:
             calculate_time(sess, net, raw_pred)
-
-        if step % 10 == 0:
-            print('Finish {0}/{1}'.format(step, num_steps))
 
     print('step {0} mIoU: {1}'.format(step, sess.run(mIoU)))
 
