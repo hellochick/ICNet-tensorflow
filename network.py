@@ -218,9 +218,7 @@ class Network(object):
 
     @layer
     def add(self, inputs, name):
-        ## Deal with adding two images with different size
-        pred = tf.reduce_all(tf.equal(tf.shape(inputs[0]), tf.shape(inputs[1])))
-        inputs[0] = tf.cond(pred, true_fn=lambda: inputs[0], false_fn=lambda: tf.image.resize_bilinear(inputs[0], size=tf.shape(inputs[1])[1:3]))
+        inputs[0] = tf.image.resize_bilinear(inputs[0], size=tf.shape(inputs[1])[1:3])
         
         return tf.add_n(inputs, name=name)
 
