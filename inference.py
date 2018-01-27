@@ -147,10 +147,9 @@ def main():
             loader = tf.train.Saver(var_list=restore_var)
             load_step = int(os.path.basename(ckpt.model_checkpoint_path).split('-')[1])
             load(loader, sess, ckpt.model_checkpoint_path)
-    for i in range(10):
-        t =time.time()
-        preds = sess.run(pred, feed_dict={x: img})
-        print(time.time()-t)
+
+    preds = sess.run(pred, feed_dict={x: img})
+
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
     misc.imsave(args.save_dir + filename, preds[0])
