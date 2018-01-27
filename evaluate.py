@@ -13,11 +13,11 @@ from tools import decode_labels
 from image_reader import ImageReader
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
-input_size = [1024, 2048]
+input_size = [1025, 2049]
 
 SAVE_DIR = './output/'
 
-DATA_DIRECTORY = '/data/cityscapes_dataset/cityscape'
+DATA_DIRECTORY = ' '
 DATA_LIST_PATH = './list/eval_list.txt'
 
 model_train30k = './model/icnet_cityscapes_train_30k.npy'
