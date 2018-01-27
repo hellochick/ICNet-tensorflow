@@ -249,6 +249,7 @@ class ICNet_BN(Network):
              .batch_normalization(relu=True, name='conv1_2_3x3_bn')
              .conv(3, 3, 64, 1, 1, biased=False, padding='SAME', relu=False, name='conv1_3_3x3')
              .batch_normalization(relu=True, name='conv1_3_3x3_bn')
+             .zero_padding(paddings=1, name='padding0')
              .max_pool(3, 3, 2, 2, name='pool1_3x3_s2')
              .conv(1, 1, 128, 1, 1, biased=False, relu=False, name='conv2_1_1x1_proj')
              .batch_normalization(relu=False, name='conv2_1_1x1_proj_bn'))
