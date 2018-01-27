@@ -54,7 +54,7 @@ def read_labeled_image_list(data_dir, data_list):
 
         image = os.path.join(data_dir, image)
         mask = os.path.join(data_dir, mask)
-
+        mask = mask.strip()
         if not tf.gfile.Exists(image):
             raise ValueError('Failed to find file: ' + image)
 

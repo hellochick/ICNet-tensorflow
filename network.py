@@ -298,8 +298,14 @@ class Network(object):
         return tf.image.resize_bilinear(input, size=size, align_corners=True, name=name)
 
     @layer
-    def interp(self, input, factor, name):
+    def interp(self, input, s_factor=1, z_factor=1, name=None):
         ori_h, ori_w = input.get_shape().as_list()[1:3]
-        resize_shape = [(int)(ori_h * factor), (int)(ori_w * factor)]
+        # shrink
+        ori_h = (ori_h - 1) * s_factor + 1
+        ori_w = (ori_w - 1) * s_factor + 1
+        # zoom
+        ori_h = ori_h + (ori_h - 1) * (z_factor - 1)
+        ori_w = ori_w + (ori_w - 1) * (z_factor - 1)
+        resize_shape = [int(ori_h), int(ori_w)]
 
         return tf.image.resize_bilinear(input, size=resize_shape, align_corners=True, name=name)
