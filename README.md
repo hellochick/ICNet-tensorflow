@@ -3,8 +3,8 @@
   This is an implementation of ICNet in TensorFlow for semantic segmentation on the [cityscapes](https://www.cityscapes-dataset.com/) dataset. We first convert weight from [Original Code](https://github.com/hszhao/ICNet) by using [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow) framework.
   
 ## Update
-#### 2017/1/27:
-1. Improve evaluation results by changing `interp` operation and add `zero padding` in front of max pooling layer. Such modification improve ther mIoU to **67.35%** ( much closer to original work ).  [Pull request #35](https://github.com/hellochick/ICNet-tensorflow/pull/35)
+#### 2018/1/27:
+1. Improve evaluation results by changing `interp` operation and add `zero padding` in front of max pooling layer. Such modification improve the mIoU to **67.35%** ( much closer to original work ).  [Pull request #35](https://github.com/hellochick/ICNet-tensorflow/pull/35)
 
 #### 2017/11/15:
 1. Support `training phase`, you can train on your own dataset. Please read the guide below.

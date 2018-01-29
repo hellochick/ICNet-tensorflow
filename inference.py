@@ -154,7 +154,7 @@ def main():
     else:
         net.load(model_path, sess)
         print('Restore from {}'.format(model_path))
-
+        
     preds = sess.run(pred, feed_dict={x: img})
 
     if not os.path.exists(args.save_dir):
