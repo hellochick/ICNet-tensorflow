@@ -82,6 +82,7 @@ List of Args:
 ```
 
 ### ADE20k
+Reach **30.2% mIoU** on ADE20k validation set.
 ```
 python evaluate.py --dataset=cityscapes --filter-scale=2 --model=others
 ```
