@@ -36,7 +36,7 @@ def layer(op):
 
 
 class Network(object):
-    def __init__(self, inputs, evaluation=False, trainable=True, is_training=False, num_classes=21):
+    def __init__(self, inputs, num_classes, filter_scale, evaluation=False, trainable=True, is_training=False):
         # The input nodes for this network
         self.inputs = inputs
         # The current list of terminal nodes
@@ -46,11 +46,13 @@ class Network(object):
         # If true, the resulting variables are set as trainable
         self.is_training = is_training
         self.trainable = trainable
+
         # Switch variable for dropout
         self.use_dropout = tf.placeholder_with_default(tf.constant(1.0),
                                                        shape=[],
                                                        name='use_dropout')
         self.evaluation = evaluation
+        self.filter_scale = filter_scale
 
         self.setup(is_training, num_classes, evaluation)
 
@@ -136,6 +138,9 @@ class Network(object):
         # Get the number of channels in the input
         c_i = input.get_shape()[-1]
 
+        if 'out' not in name and 'cls' not in name:
+            c_o *= self.filter_scale
+
         convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding=padding,data_format=DEFAULT_DATAFORMAT)
         with tf.variable_scope(name) as scope:
             kernel = self.make_var('weights', shape=[k_h, k_w, c_i, c_o])
@@ -164,6 +169,7 @@ class Network(object):
         self.validate_padding(padding)
         # Get the number of channels in the input
         c_i = input.get_shape()[-1]
+        c_o *= self.filter_scale
 
         convolve = lambda i, k: tf.nn.atrous_conv2d(i, k, dilation, padding=padding)
         with tf.variable_scope(name) as scope:

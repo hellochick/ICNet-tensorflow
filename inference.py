@@ -13,12 +13,20 @@ from model import ICNet, ICNet_BN
 from tools import decode_labels
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
-num_classes = 19
+# define setting & model configuration
+ADE20k_class = 150 # predict: [0~149] corresponding to label [1~150], ignore class 0 (background)
+cityscapes_class = 19
 
-model_train30k = './model/icnet_cityscapes_train_30k.npy'
-model_trainval90k = './model/icnet_cityscapes_trainval_90k.npy'
-model_train30k_bn = './model/icnet_cityscapes_train_30k_bnnomerge.npy'
-model_trainval90k_bn = './model/icnet_cityscapes_trainval_90k_bnnomerge.npy'
+model_paths = {'train': './model/icnet_cityscapes_train_30k.npy', 
+              'trainval': './model/icnet_cityscapes_trainval_90k.npy',
+              'train_bn': './model/icnet_cityscapes_train_30k_bnnomerge.npy',
+              'trainval_bn': './model/icnet_cityscapes_trainval_90k_bnnomerge.npy',
+              'others': './model/'}
+
+# mapping different model
+model_config = {'train': ICNet, 'trainval': ICNet, 'train_bn': ICNet_BN, 'trainval_bn': ICNet_BN, 'others': ICNet_BN}
+
+
 snapshot_dir = './snapshots'
 
 SAVE_DIR = './output/'
@@ -36,7 +44,12 @@ def get_arguments():
                         help="Path to save output.")
     parser.add_argument("--flipped-eval", action="store_true",
                         help="whether to evaluate with flipped img.")
-
+    parser.add_argument("--filter-scale", type=int, default=1,
+                        help="1 for using pruned model, while 2 for using non-pruned model.",
+                        choices=[1, 2])
+    parser.add_argument("--dataset", type=str, default='',
+                        choices=['ade20k', 'cityscapes'],
+                        required=True)
 
     return parser.parse_args()
 
@@ -96,6 +109,11 @@ def check_input(img):
 def main():
     args = get_arguments()
     
+    if args.dataset == 'cityscapes':
+        num_classes = cityscapes_class
+    else:
+        num_classes = ADE20k_class
+
     img, filename = load_img(args.img_path)
     shape = img.shape[0:2]
 
@@ -103,13 +121,8 @@ def main():
     img_tf = preprocess(x)
     img_tf, n_shape = check_input(img_tf)
 
-    # Create network.
-    if args.model[-2:] == 'bn':
-        net = ICNet_BN({'data': img_tf}, num_classes=num_classes)
-    elif args.model == 'others':
-        net = ICNet_BN({'data': img_tf}, num_classes=num_classes)
-    else:
-        net = ICNet({'data': img_tf}, num_classes=num_classes)
+    model = model_config[args.model]
+    net = model({'data': img_tf}, num_classes=num_classes, filter_scale=args.filter_scale)
     
     raw_output = net.layers['conv6_cls']
     
@@ -129,28 +142,21 @@ def main():
 
     restore_var = tf.global_variables()
     
-    if args.model == 'train':
-        print('Restore from train30k model...')
-        net.load(model_train30k, sess)
-    elif args.model == 'trainval':
-        print('Restore from trainval90k model...')
-        net.load(model_trainval90k, sess)
-    elif args.model == 'train_bn':
-        print('Restore from train30k bnnomerge model...')
-        net.load(model_train30k_bn, sess)
-    elif args.model == 'trainval_bn':
-        print('Restore from trainval90k bnnomerge model...')
-        net.load(model_trainval90k_bn, sess)
-    else:
-        ckpt = tf.train.get_checkpoint_state(snapshot_dir)
+    model_path = model_paths[args.model]
+    if args.model == 'others':
+        ckpt = tf.train.get_checkpoint_state(model_path)
         if ckpt and ckpt.model_checkpoint_path:
-            loader = tf.train.Saver(var_list=restore_var)
+            loader = tf.train.Saver(var_list=tf.global_variables())
             load_step = int(os.path.basename(ckpt.model_checkpoint_path).split('-')[1])
             load(loader, sess, ckpt.model_checkpoint_path)
-    for i in range(10):
-        t =time.time()
-        preds = sess.run(pred, feed_dict={x: img})
-        print(time.time()-t)
+        else:
+            print('No checkpoint file found.')
+    else:
+        net.load(model_path, sess)
+        print('Restore from {}'.format(model_path))
+
+    preds = sess.run(pred, feed_dict={x: img})
+
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
     misc.imsave(args.save_dir + filename, preds[0])

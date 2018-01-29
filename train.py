@@ -1,7 +1,6 @@
 """
 This code is based on DrSleep's framework: https://github.com/DrSleep/tensorflow-deeplab-resnet 
 """
-
 from __future__ import print_function
 
 import argparse
@@ -18,8 +17,9 @@ from image_reader import ImageReader
 
 IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
 
-# If you want to apply to other datasets, change following three lines
-DATA_LIST_PATH = '/PATH/TO/CITYSCAPES_DATASET' 
+# If you want to apply to other datasets, change following four lines
+DATA_DIR = '/PATH/TO/CITYSCAPES_DATASET'
+DATA_LIST_PATH = './list/cityscapes_train_list.txt' 
 IGNORE_LABEL = 255 # The class number of background
 INPUT_SIZE = '720, 720' # Input size for training
 
@@ -43,8 +43,6 @@ LAMBDA3 = 1.0
 
 def get_arguments():
     parser = argparse.ArgumentParser(description="ICNet")
-    parser.add_argument("--data-list", type=str, default=DATA_LIST_PATH,
-                        help="Path to the file listing the images in the dataset.")
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE,
                         help="Number of images sent to the network in one step.")
     parser.add_argument("--ignore-label", type=int, default=IGNORE_LABEL,
@@ -77,6 +75,9 @@ def get_arguments():
                         help="whether to get update_op from tf.Graphic_Keys")
     parser.add_argument("--train-beta-gamma", action="store_true",
                         help="whether to train beta & gamma in bn layer")
+    parser.add_argument("--filter-scale", type=int, default=1,
+                        help="1 for using pruned model, while 2 for using non-pruned model.",
+                        choices=[1, 2])
     return parser.parse_args()
 
 def save(saver, sess, logdir, step):
@@ -125,8 +126,8 @@ def main():
     
     with tf.name_scope("create_inputs"):
         reader = ImageReader(
-            ' ',
-            args.data_list,
+            DATA_DIR,
+            DATA_LIST_PATH,
             input_size,
             args.random_scale,
             args.random_mirror,
@@ -135,7 +136,7 @@ def main():
             coord)
         image_batch, label_batch = reader.dequeue(args.batch_size)
     
-    net = ICNet_BN({'data': image_batch}, is_training=True, num_classes=args.num_classes)
+    net = ICNet_BN({'data': image_batch}, is_training=True, num_classes=args.num_classes, filter_scale=args.filter_scale)
     
     sub4_out = net.layers['sub4_out']
     sub24_out = net.layers['sub24_out']
