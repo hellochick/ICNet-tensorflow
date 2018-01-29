@@ -1,7 +1,9 @@
 # ICNet_tensorflow
 ## Introduction
-  This is an implementation of ICNet in TensorFlow for semantic segmentation on the [cityscapes](https://www.cityscapes-dataset.com/) dataset. We first convert weight from [Original Code](https://github.com/hszhao/ICNet) by using [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow) framework.
+  This is an implementation of ICNet in TensorFlow for semantic segmentation on the [cityscapes](https://www.cityscapes-dataset.com/) dataset. We first convert weight from [Original Code](https://github.com/hszhao/ICNet) by using [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow) framework.  
   
+ ![](https://github.com/hellochick/ICNet-tensorflow/blob/master/utils/icnet.png)
+ 
 ## Update
 #### 2018/1/30:
 1. `Support evaluation and inference code for ADE20k dataset`, and the model reached **30.2% mIoU** after 200k steps of training.  
