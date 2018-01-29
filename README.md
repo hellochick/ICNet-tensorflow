@@ -23,8 +23,7 @@
 
 
 ## Install
-Get restore checkpoint from [Google Drive](https://drive.google.com/drive/folders/0B9CKOTmy0DyadTdHejU1Q1lfRkU?usp=sharing
-) and put into `model` directory.
+Get restore checkpoint from [Google Drive](https://drive.google.com/drive/folders/1pBN07IW_zxEVlL2q9ColGs6QkUNkplsi?usp=sharing) and put into `model` directory.
 
 ## Inference
 To get result on your own images, use the following command:
