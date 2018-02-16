@@ -6,7 +6,7 @@
  
 ## Update
 #### 2018/2/16:
-1. Fix bug in 'ICNet_BN' model, which related to issue [#32](https://github.com/hellochick/ICNet-tensorflow/issues/32) and [#41](https://github.com/hellochick/ICNet-tensorflow/issues/41).
+1. `Fix bug in 'ICNet_BN' model`, which related to issue [#32](https://github.com/hellochick/ICNet-tensorflow/issues/32) and [#41](https://github.com/hellochick/ICNet-tensorflow/issues/41).
 2. Update new pre-trained weight of ADE20k dataset, which reached **32.0% mIoU**.
 
 #### 2018/1/30:
