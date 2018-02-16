@@ -5,3 +5,5 @@ __pycache__
 .DS_Store
 ._.*
 model.ckpt-*
+checkpoint
+demo.py

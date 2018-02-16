@@ -317,7 +317,7 @@ class ICNet_BN(Network):
              .batch_normalization(relu=False, name='conv3_2_1x1_increase_bn'))
 
         (self.feed('conv3_1_sub4',
-                   'conv3_2_1x1_increase')
+                   'conv3_2_1x1_increase_bn')
              .add(name='conv3_2')
              .relu(name='conv3_2/relu')
              .conv(1, 1, 64, 1, 1, biased=False, relu=False, name='conv3_3_1x1_reduce')
@@ -382,7 +382,7 @@ class ICNet_BN(Network):
              .batch_normalization(relu=False, name='conv4_3_1x1_increase_bn'))
 
         (self.feed('conv4_2/relu',
-                   'conv4_3_1x1_increase')
+                   'conv4_3_1x1_increase_bn')
              .add(name='conv4_3')
              .relu(name='conv4_3/relu')
              .conv(1, 1, 128, 1, 1, biased=False, relu=False, name='conv4_4_1x1_reduce')
