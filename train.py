@@ -54,7 +54,7 @@ def get_arguments():
     parser.add_argument("--momentum", type=float, default=MOMENTUM,
                         help="Momentum component of the optimiser.")
     parser.add_argument("--num-classes", type=int, default=NUM_CLASSES,
-                        help="Number of classes to predict (including background).")
+                        help="Number of classes to predict.")
     parser.add_argument("--num-steps", type=int, default=NUM_STEPS,
                         help="Number of training steps.")
     parser.add_argument("--random-mirror", action="store_true",
