@@ -2,8 +2,10 @@ from __future__ import print_function
 
 import argparse
 import os
+import glob
 import sys
 import time
+import timeit
 from PIL import Image
 import tensorflow as tf
 import numpy as np
@@ -34,8 +36,9 @@ SAVE_DIR = './output/'
 def get_arguments():
     parser = argparse.ArgumentParser(description="Reproduced PSPNet")
     parser.add_argument("--img-path", type=str, default='',
-                        help="Path to the RGB image file.",
-                        required=True)
+                        help="Path to the RGB image file.")
+    parser.add_argument("--img-dir", type=str,
+                        help="Dir to the RGB images.")
     parser.add_argument("--model", type=str, default='',
                         help="Model to use.",
                         choices=['train', 'trainval', 'train_bn', 'trainval_bn', 'others'],
@@ -114,8 +117,19 @@ def main():
     else:
         num_classes = ADE20k_class
 
-    img, filename = load_img(args.img_path)
-    shape = img.shape[0:2]
+    imgs=[]
+    filenames=[]
+    if args.img_dir:
+        img_files = glob.glob('{}/*.jpg'.format(args.img_dir))
+        for img in img_files:
+            img, filename = load_img(img)
+            imgs.append(img)
+            filenames.append(filename)
+    else:
+        img, filename = load_img(args.img_path)
+        imgs.append(img)
+        filenames.append(filename)
+    shape = imgs[0].shape[0:2]
 
     x = tf.placeholder(dtype=tf.float32, shape=img.shape)
     img_tf = preprocess(x)
@@ -154,12 +168,19 @@ def main():
     else:
         net.load(model_path, sess)
         print('Restore from {}'.format(model_path))
-        
-    preds = sess.run(pred, feed_dict={x: img})
 
-    if not os.path.exists(args.save_dir):
-        os.makedirs(args.save_dir)
-    misc.imsave(args.save_dir + filename, preds[0])
+    curr=1    
+    for img, filename in zip(imgs, filenames):
+        start_time = timeit.default_timer() 
+        preds = sess.run(pred, feed_dict={x: img})
+        elapsed = timeit.default_timer() - start_time
+        print('inference time: {}'.format(elapsed))
+
+        if not os.path.exists(args.save_dir):
+            os.makedirs(args.save_dir)
+        misc.imsave(args.save_dir + filename, preds[0])
+        print('processed {}/{}'.format(curr, len(imgs)))
+        curr += 1
 
 if __name__ == '__main__':
     main()
