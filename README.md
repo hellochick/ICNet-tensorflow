@@ -70,10 +70,16 @@ Perform in single-scaled model on the cityscapes validation dataset. (We have su
 | train_30k   | **67.67/67.7** | **0.03%** |
 | trainval_90k| **81.06%**    | None |
 
-To get evaluation result, you need to download Cityscape dataset from [Official website](https://www.cityscapes-dataset.com/) first. Then change `cityscapes_param` to your dataset path in `evaluate.py`:
+To get evaluation result, you need to download Cityscape dataset from [Official website](https://www.cityscapes-dataset.com/) first (you'll need to request access which may take couple of days). Then change `cityscapes_param` to your dataset path in `evaluate.py`:
 ```
 # line 29
 'data_dir': '/PATH/TO/YOUR/CITYSCAPES_DATASET'
+```
+
+Then convert downloaded dataset ground truth to training format by following [instructions to install cityscapesScripts](https://github.com/mcordts/cityscapesScripts) then running these commands
+```bash
+export CITYSCAPES_DATASET=<cityscapes dataset path>
+csCreateTrainIdLabelImgs
 ```
 
 Then run the following command: 
