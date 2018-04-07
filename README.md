@@ -4,30 +4,6 @@
   
  ![](https://github.com/hellochick/ICNet-tensorflow/blob/master/utils/icnet.png)
  
-## Update
-#### 2018/2/16:
-1. `Fix bug in 'ICNet_BN' model`, which related to issue [#32](https://github.com/hellochick/ICNet-tensorflow/issues/32) and [#41](https://github.com/hellochick/ICNet-tensorflow/issues/41).
-2. Update new pre-trained weight of ADE20k dataset, which reached **32.0% mIoU**.
-
-#### 2018/1/30:
-1. `Support evaluation and inference code for ADE20k dataset`, and the model reached **30.2% mIoU** after 200k steps of training.  
-> Note: I **trained on the non-pruned model**, and I **haven't done model pruning and merge bn parameters.** However, it still maintain `Real-time` property.
-2. Support two version of models: **Non-pruned and pruned version**. By adding flag `--filter-scale=1 or 2` to select different configurations. I recommend set `--filter-scale=2` during training phase, and this doubles the number of filters (if you have any doubt, see the implementation part which described in the paper first).
-
-#### 2018/1/27:
-1. Improve evaluation results by changing `interp` operation and add `zero padding` in front of max pooling layer. Such modification improve the mIoU to **67.35%** ( much closer to original work ).  [Pull request #35](https://github.com/hellochick/ICNet-tensorflow/pull/35)
-
-#### 2017/11/15:
-1. Support `training phase`, you can train on your own dataset. Please read the guide below.
-
-#### 2017/11/13:
-1. Add `bnnomerge model` which reparing for training phase. Choose different model using flag `--model=train, train_bn, trainval, trainval_bn` (Upload model in google drive).
-2. Change `tf.nn.batch_normalization` to `tf.layers.batch_normalization`.
-
-#### 2017/11/07:
-`Support every image size larger than 128x256` by changing the avg pooling ksize and strides in the pyramid module. If input image size cannot divided by 32, it will be padded in to mutiple of 32.
-
-
 ## Install
 Get restore checkpoint from [Google Drive](https://drive.google.com/drive/folders/1pBN07IW_zxEVlL2q9ColGs6QkUNkplsi?usp=sharing) and put into `model` directory.
 
