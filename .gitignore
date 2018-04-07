@@ -1,9 +1,0 @@
-*.npy
-__pycache__
-*.pyc
-*.prototxt
-.DS_Store
-._.*
-model.ckpt-*
-checkpoint
-demo.py
