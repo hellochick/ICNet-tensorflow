@@ -1,6 +1,5 @@
 import scipy.io as sio
 import numpy as np
-from PIL import Image
 import tensorflow as tf
 
 label_colours = [[128, 64, 128], [244, 35, 231], [69, 69, 69]

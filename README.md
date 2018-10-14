@@ -1,135 +1,156 @@
 # ICNet_tensorflow
-## Introduction
-  This is an implementation of ICNet in TensorFlow for semantic segmentation on the [cityscapes](https://www.cityscapes-dataset.com/) dataset. We first convert weight from [Original Code](https://github.com/hszhao/ICNet) by using [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow) framework.  
+  This repo provides a TensorFlow-based implementation of paper "[ICNet for Real-Time Semantic Segmentation on High-Resolution Images](https://arxiv.org/abs/1704.08545)," by Hengshuang Zhao et al. (ECCV'18).
   
- ![](https://github.com/hellochick/ICNet-tensorflow/blob/master/utils/icnet.png)
- 
-## Install
-Get restore checkpoint from [Google Drive](https://drive.google.com/drive/folders/1pBN07IW_zxEVlL2q9ColGs6QkUNkplsi?usp=sharing) and put into `model` directory.
+  The model generates segmentation mask for every pixel in the image. It's based on the ResNet50 with totally three branches as auxiliary paths, see architecture below for illustration.
+  
+ ![](./utils/icnet.png)
+  
+  We provide both training and inference code in this repo. The pre-trained models we provided are converted from caffe weights in [Official Implementation](https://github.com/hszhao/ICNet). 
 
-## Inference
-To get result on your own images, use the following command:
-
-### Cityscapes example
+## Table Of Contents
+- [Environment Setup](#environment)
+- [Download Weights](#download-weights)
+- [Download Dataset](#download-dataset)
+  + [ade20k](#download-ade20k)
+  + [cityscapes](#download-cityscapes)
+- [Get Started!](#get-started)
+  + [Inference on your own image](#inference)
+  + [Evaluate on cityscapes/ade20k dataset](#evaluation)
+  + [Training on your own dataset](#training)
+  
+## Environment Setup <a name="environment"></a>
 ```
-python inference.py --img-path=./input/outdoor_1.png --dataset=cityscapes --filter-scale=1 
-```
-### ADE20k example
-```
-python inference.py --img-path=./input/indoor_1.png --dataset=ade20k --filter-scale=2
-```
-
-List of Args:
-```
---model=train       - To select train_30k model (Default)
---model=trainval    - To select trainval_90k model
---model=train_bn    - To select train_30k_bn model
---model=trainval_bn - To select trainval_90k_bn model
---model=others      - To select your own checkpoint
-
---dataset=cityscapes - To select inference on cityscapes dataset
---dataset=ade20k     - To select inference on ade20k dataset
-
---filter-scale      - 1 for pruned model, while 2 for non-pruned model. (if you load pre-trained model, always set to 1. 
-                      However, if you want to try pre-trained model on ade20k, set this parameter to 2)
-```
-### Inference time
-* **Including time of loading images**: ~0.04s
-* **Excluding time of loading images (Same as described in paper)**: ~0.03s
-
-## Evaluation
-### Cityscapes
-Perform in single-scaled model on the cityscapes validation dataset. (We have sucessfully re-produced the performance same to caffe framework!)
-
-| Model | Accuracy |  Missing accuracy |
-|:-----------:|:----------:|:---------:|
-| train_30k   | **67.67/67.7** | **0.03%** |
-| trainval_90k| **81.06%**    | None |
-
-To get evaluation result, you need to download Cityscape dataset from [Official website](https://www.cityscapes-dataset.com/) first (you'll need to request access which may take couple of days). Then change `cityscapes_param` to your dataset path in `evaluate.py`:
-```
-# line 29
-'data_dir': '/PATH/TO/YOUR/CITYSCAPES_DATASET'
+pip install tensorflow-gpu opencv-python jupyter matplotlib tqdm
 ```
 
-Then convert downloaded dataset ground truth to training format by following [instructions to install cityscapesScripts](https://github.com/mcordts/cityscapesScripts) then running these commands
+## Download Weights <a name="download-weights"></a>
+We provide pre-trained weights for [cityscapes](https://www.cityscapes-dataset.com/) and [ADE20k](http://sceneparsing.csail.mit.edu/) dataset. You can download the weights easily use following command,
+
+```
+python script/download_weights.py --dataset cityscapes (or ade20k)
+```
+
+## Download Dataset (Optional) <a name="download-dataset"></a>
+If you want to evaluate the provided weights or keep fine-tuning on cityscapes and ade20k dataset, you need to download them using different methods.
+
+### ADE20k dataset <a name="download-ade20k"></a>
+Simply run following command:
+
+```
+bash script/download_ADE20k.sh
+```
+
+### Cityscapes dataset <a name="download-cityscapes"></a>
+You need to download Cityscape dataset from [Official website](https://www.cityscapes-dataset.com/) first (you'll need to request access which may take couple of days).
+
+Then convert downloaded dataset ground truth to training format by following [instructions to install cityscapesScripts](https://github.com/mcordts/cityscapesScripts) then running these commands:
 ```bash
 export CITYSCAPES_DATASET=<cityscapes dataset path>
 csCreateTrainIdLabelImgs
 ```
 
-Then run the following command: 
+## Get started! <a name="get-started"></a>
+This repo provide three phases with full documented, which means you can try train/evaluate/inference on your own.
+
+### Inference on your own image<a name="inference"></a>
+[demo.ipynb](./demo.ipynb) show the easiest example to run semantic segmnetation on your own image. 
+
+![](./data/output/vis_im1.png)
+![](./data/output/vis_im2.png)
+
+In the end of [demo.ipynb](./demo.ipynb), you can test the speed of ICNet.
+
+Here are some results run on Titan Xp with high resolution images (1024x2048):  
+**~0.037(s) per images, which means we can get ~27 fps** (nearly same as described in paper).
+
+### Evaluate on cityscapes/ade20k dataset <a name="evaluation"></a>
+To get the results, you need to follow the steps metioned above to download dataset first.  
+Then you need to change the `data_dir` path in [config.py](./utils/config.py#L6).
+
+```python
+CITYSCAPES_DATA_DIR = '/data/cityscapes_dataset/cityscape/'
+ADE20K_DATA_DIR = './data/ADEChallengeData2016/'
+```
+
+#### Cityscapes
+Perform in single-scaled model on the cityscapes validation dataset. (We have sucessfully re-produced the performance same to caffe framework).
+
+| Model | Accuracy | Model | Accuracy |
+|:-----------:|:----------:|:---------:|:---------:|
+| train_30k   | **67.26%/67.7%** | train_30k_bn |**67.31%/67.7%** |
+| trainval_90k| **80.90%**    | trainval_90k_bn |**0.8081%** |
+
+Run following command to get evaluation results,
 ```
 python evaluate.py --dataset=cityscapes --filter-scale=1 --model=trainval
 ```
+
 List of Args:
 ```
---model=train    - To select train_30k model (Default)
---model=trainval - To select trainval_90k model
---measure-time   - Calculate inference time (e.q subtract preprocessing time)
+--model=train       - To select train_30k model
+--model=trainval    - To select trainval_90k model
+--model=train_bn    - To select train_30k_bn model
+--model=trainval_bn - To select trainval_90k_bn model
 ```
 
 ### ADE20k
-Reach **30.2% mIoU** on ADE20k validation set.
+Reach **32.25%mIoU** on ADE20k validation set.
+
 ```
-python evaluate.py --dataset=cityscapes --filter-scale=2 --model=others
+python evaluate.py --dataset=ade20k --filter-scale=2 --model=others
 ```
-> Note: to use model provided by us, set `filter-scale` to 2
+> Note: to use model provided by us, set `filter-scale` to 2.
 
-## Image Result
-### Cityscapes
-Input image                |  Output image
-:-------------------------:|:-------------------------:
-![](https://github.com/hellochick/ICNet_tensorflow/blob/master/input/outdoor_1.png)  |  ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/output/outdoor_1.png)
+## Training on your own dataset <a name="training"></a>
+This implementation is different from the details descibed in ICNet paper, since I did not re-produce model compression part. Instead, we **train on the half kernels directly**.  
 
-### ADE20k
-Input image                |  Output image
-:-------------------------:|:-------------------------:
-![](https://github.com/hellochick/ICNet_tensorflow/blob/master/input/indoor_2.jpg)  |  ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/output/indoor_2.jpg)
-![](https://github.com/hellochick/ICNet_tensorflow/blob/master/input/outdoor_2.png)  |  ![](https://github.com/hellochick/ICNet_tensorflow/blob/master/output/outdoor_2.png)
+In orignal paper, the authod trained the model in full kernels and then performed model-pruning techique to kill half kernels. Here **we use --filter-scale to denote whether pruning or not**. 
 
-## Training on your own dataset
-> Note: This implementation is different from the details descibed in ICNet paper, since I did not re-produce model compression part. Instead, we train on the half kernel directly.
+For example, `--filter-scale=1` <-> `[h, w, 32]` and `--filter-scale=2` <-> `[h, w, 128]`. 
 
 ### Step by Step
-**1. Change the `DATA_LIST_PATH`** in line 22, make sure the list contains the absolute path of your data files, in `list.txt`:
-```
-/ABSOLUTE/PATH/TO/image /ABSOLUTE/PATH/TO/label
-```
-**2. Set Hyperparameters** (line 21-35) in `train.py`
-```
-BATCH_SIZE = 48
-IGNORE_LABEL = 0
-INPUT_SIZE = '480,480'
-LEARNING_RATE = 1e-3
-MOMENTUM = 0.9
-NUM_CLASSES = 27
-NUM_STEPS = 60001
-POWER = 0.9
-RANDOM_SEED = 1234
-WEIGHT_DECAY = 0.0001
-```
-Also **set the loss function weight** (line 38-40) descibed in the paper:
-```
-# Loss Function = LAMBDA1 * sub4_loss + LAMBDA2 * sub24_loss + LAMBDA3 * sub124_loss
-LAMBDA1 = 0.4
-LAMBDA2 = 0.6
-LAMBDA3 = 1.0
+**1. Change the configurations** in [utils/config.py](./utils/config.py).
 
+```python
+cityscapes_param = {'name': 'cityscapes',
+                    'num_classes': 19,
+                    'ignore_label': 255,
+                    'eval_size': [1025, 2049],
+                    'eval_steps': 500,
+                    'eval_list': CITYSCAPES_eval_list,
+                    'train_list': CITYSCAPES_train_list,
+                    'data_dir': CITYSCAPES_DATA_DIR}
 ```
+
+**2. Set Hyperparameters** in `train.py`, 
+
+```python
+class TrainConfig(Config):
+    def __init__(self, dataset, is_training,  filter_scale=1, random_scale=None, random_mirror=None):
+        Config.__init__(self, dataset, is_training, filter_scale, random_scale, random_mirror)
+
+    # Set pre-trained weights here (You can download weight using `python script/download_weights.py`) 
+    # Note that you need to use "bnnomerge" version.
+    model_weight = './model/cityscapes/icnet_cityscapes_train_30k_bnnomerge.npy'
+    
+    # Set hyperparameters here, you can get much more setting in Config Class, see 'utils/config.py' for details.
+    LAMBDA1 = 0.16
+    LAMBDA2 = 0.4
+    LAMBDA3 = 1.0
+    BATCH_SIZE = 4
+    LEARNING_RATE = 5e-4
+```
+
 **3.** Run following command and **decide whether to update mean/var or train beta/gamma variable**.
 ```
-python train.py --update-mean-var --train-beta-gamma
+python train.py --update-mean-var --train-beta-gamma \
+      --random-scale --random-mirror --dataset cityscapes --filter-scale 1
 ```
-After training the dataset, you can run following command to get the result:  
-```
-python inference.py --img-path=YOUR_OWN_IMAGE --model=others
-```
-### Result ( inference with my own data )
 
-Input                      |  Output
-:-------------------------:|:-------------------------:
-![](https://github.com/hellochick/ICNet_tensorflow/blob/master/input/indoor_1.jpg)  |  ![](https://github.com/hellochick/ICNet-tensorflow/blob/master/output/indoor_1.jpg)
+**Note: Be careful to use `--update-mean-var`!** Use this flag means you will update the moving mean and moving variance in batch normalization layer. This **need large batch size**, otherwise it will lead bad results. 
+
+### Result (inference with my own data)
+![](./data/output/my_own_image.png)
 
 ## Citation
     @article{zhao2017icnet,
@@ -142,8 +163,7 @@ Input                      |  Output
       journal={arXiv preprint arXiv:1704.08545},
       year = {2017}
     }
-Scene Parsing through ADE20K Dataset. B. Zhou, H. Zhao, X. Puig, S. Fidler, A. Barriuso and A. Torralba. Computer Vision and Pattern Recognition (CVPR), 2017. (http://people.csail.mit.edu/bzhou/publication/scene-parse-camera-ready.pdf)
-
+    
     @inproceedings{zhou2017scene,
         title={Scene Parsing through ADE20K Dataset},
         author={Zhou, Bolei and Zhao, Hang and Puig, Xavier and Fidler, Sanja and Barriuso, Adela and Torralba, Antonio},
@@ -151,8 +171,6 @@ Scene Parsing through ADE20K Dataset. B. Zhou, H. Zhao, X. Puig, S. Fidler, A. B
         year={2017}
     }
     
-Semantic Understanding of Scenes through ADE20K Dataset. B. Zhou, H. Zhao, X. Puig, S. Fidler, A. Barriuso and A. Torralba. arXiv:1608.05442. (https://arxiv.org/pdf/1608.05442.pdf)
-
     @article{zhou2016semantic,
       title={Semantic understanding of scenes through the ade20k dataset},
       author={Zhou, Bolei and Zhao, Hang and Puig, Xavier and Fidler, Sanja and Barriuso, Adela and Torralba, Antonio},

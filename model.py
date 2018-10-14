@@ -1,8 +1,59 @@
-from network import Network
 import tensorflow as tf
+from network import Network
+from utils.image_reader import _infer_preprocess
+from utils.visualize import decode_labels
 
 class ICNet(Network):
-    def setup(self, is_training, num_classes, evalutaion):
+    def __init__(self, cfg, mode, image_reader=None):
+        self.cfg = cfg
+        self.mode = mode
+
+        if mode == 'train':
+            self.images, self.labels = image_reader.next_image, image_reader.next_label    
+        
+            super().__init__(inputs={'data': self.images}, cfg=self.cfg)
+
+        elif mode == 'eval':
+            self.images, self.labels = image_reader.next_image, image_reader.next_label    
+        
+            super().__init__(inputs={'data': self.images}, cfg=self.cfg)
+            
+            self.output = self.get_output_node()
+
+        elif mode == 'inference':
+            # Create placeholder and pre-process here.
+            self.img_placeholder = tf.placeholder(dtype=tf.float32, shape=cfg.INFER_SIZE)
+            self.images, self.o_shape, self.n_shape = _infer_preprocess(self.img_placeholder)
+            
+            super().__init__(inputs={'data': self.images}, cfg=self.cfg)
+
+            self.output = self.get_output_node()
+
+    def get_output_node(self):
+        if self.mode == 'inference':
+            # Get logits from final layer
+            logits = self.layers['conv6_cls']
+
+            # Upscale the logits and decode prediction to get final result.
+            logits_up = tf.image.resize_bilinear(logits, size=self.n_shape, align_corners=True)
+            logits_up = tf.image.crop_to_bounding_box(logits_up, 0, 0, self.o_shape[0], self.o_shape[1])
+
+            output_classes = tf.argmax(logits_up, axis=3)
+            output = decode_labels(output_classes, self.o_shape, self.cfg.param['num_classes'])
+
+        elif self.mode == 'eval':
+            logits = self.layers['conv6_cls']
+
+            logits_up = tf.image.resize_bilinear(logits, size=tf.shape(self.labels)[1:3], align_corners=True)
+            output = tf.argmax(logits_up, axis=3)
+            output = tf.expand_dims(output, axis=3)
+
+        return output
+
+    def predict(self, image):
+        return self.sess.run(self.output, feed_dict={self.img_placeholder: image})
+
+    def setup(self):
         (self.feed('data')
              .interp(s_factor=0.5, name='data_sub2')
              .conv(3, 3, 32, 2, 2, biased=True, padding='SAME', relu=True, name='conv1_1_3x3_s2')
@@ -171,7 +222,7 @@ class ICNet(Network):
         shape = self.layers['conv5_3/relu'].get_shape().as_list()[1:3]
         h, w = shape
 
-        if self.evaluation: # Change to same configuration as original prototxt
+        if self.mode == 'eval' and self.cfg.dataset == 'cityscapes': # Change to same configuration as original prototxt
             (self.feed('conv5_3/relu')
                 .avg_pool(33, 65, 33, 65, name='conv5_3_pool1')
                 .resize_bilinear(shape, name='conv5_3_pool1_interp'))
@@ -237,10 +288,60 @@ class ICNet(Network):
              .add(name='sub12_sum')
              .relu(name='sub12_sum/relu')
              .interp(z_factor=2.0, name='sub12_sum_interp')
-             .conv(1, 1, num_classes, 1, 1, biased=True, relu=False, name='conv6_cls'))
+             .conv(1, 1, self.cfg.param['num_classes'], 1, 1, biased=True, relu=False, name='conv6_cls'))
+
 
 class ICNet_BN(Network):
-    def setup(self, is_training, num_classes, evaluation):
+    def __init__(self, cfg, mode, image_reader=None):
+        self.cfg = cfg
+        self.mode = mode
+
+        if mode == 'train':
+            self.images, self.labels = image_reader.next_image, image_reader.next_label    
+        
+            super().__init__(inputs={'data': self.images}, cfg=self.cfg)
+
+        elif mode == 'eval':
+            self.images, self.labels = image_reader.next_image, image_reader.next_label    
+        
+            super().__init__(inputs={'data': self.images}, cfg=self.cfg)
+            
+            self.output = self.get_output_node()
+
+        elif mode == 'inference':
+            # Create placeholder and pre-process here.
+            self.img_placeholder = tf.placeholder(dtype=tf.float32, shape=cfg.INFER_SIZE)
+            self.images, self.o_shape, self.n_shape = _infer_preprocess(self.img_placeholder)
+            
+            super().__init__(inputs={'data': self.images}, cfg=self.cfg)
+
+            self.output = self.get_output_node()
+
+    def get_output_node(self):
+        if self.mode == 'inference':
+            # Get logits from final layer
+            logits = self.layers['conv6_cls']
+
+            # Upscale the logits and decode prediction to get final result.
+            logits_up = tf.image.resize_bilinear(logits, size=self.n_shape, align_corners=True)
+            logits_up = tf.image.crop_to_bounding_box(logits_up, 0, 0, self.o_shape[0], self.o_shape[1])
+
+            output_classes = tf.argmax(logits_up, axis=3)
+            output = decode_labels(output_classes, self.o_shape, self.cfg.param['num_classes'])
+
+        elif self.mode == 'eval':
+            logits = self.layers['conv6_cls']
+
+            logits_up = tf.image.resize_bilinear(logits, size=tf.shape(self.labels)[1:3], align_corners=True)
+            output = tf.argmax(logits_up, axis=3)
+            output = tf.expand_dims(output, axis=3)
+
+        return output
+
+    def predict(self, image):
+        return self.sess.run(self.output, feed_dict={self.img_placeholder: image})
+
+    def setup(self):
         (self.feed('data')
              .interp(s_factor=0.5, name='data_sub2')
              .conv(3, 3, 32, 2, 2, biased=False, padding='SAME', relu=False, name='conv1_1_3x3_s2')
@@ -522,10 +623,10 @@ class ICNet_BN(Network):
              .add(name='sub12_sum')
              .relu(name='sub12_sum/relu')
              .interp(z_factor=2.0, name='sub12_sum_interp')
-             .conv(1, 1, num_classes, 1, 1, biased=True, relu=False, name='conv6_cls'))
+             .conv(1, 1, self.cfg.param['num_classes'], 1, 1, biased=True, relu=False, name='conv6_cls'))
 
         (self.feed('conv5_4_interp')
-             .conv(1, 1, num_classes, 1, 1, biased=True, relu=False, name='sub4_out'))
+             .conv(1, 1, self.cfg.param['num_classes'], 1, 1, biased=True, relu=False, name='sub4_out'))
 
         (self.feed('sub24_sum_interp')
-             .conv(1, 1, num_classes, 1, 1, biased=True, relu=False, name='sub24_out'))
+             .conv(1, 1, self.cfg.param['num_classes'], 1, 1, biased=True, relu=False, name='sub24_out'))

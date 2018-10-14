@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-slim = tf.contrib.slim
+import os
 
 DEFAULT_PADDING = 'VALID'
 DEFAULT_DATAFORMAT = 'NHWC'
@@ -36,31 +36,63 @@ def layer(op):
 
 
 class Network(object):
-    def __init__(self, inputs, num_classes, filter_scale, evaluation=False, trainable=True, is_training=False):
+    def __init__(self, inputs, cfg, trainable=True):
         # The input nodes for this network
         self.inputs = inputs
         # The current list of terminal nodes
         self.terminals = []
         # Mapping from layer names to layers
         self.layers = dict(inputs)
-        # If true, the resulting variables are set as trainable
-        self.is_training = is_training
+        
         self.trainable = trainable
 
         # Switch variable for dropout
         self.use_dropout = tf.placeholder_with_default(tf.constant(1.0),
                                                        shape=[],
                                                        name='use_dropout')
-        self.evaluation = evaluation
-        self.filter_scale = filter_scale
+        self.filter_scale = cfg.filter_scale
 
-        self.setup(is_training, num_classes, evaluation)
+        # If true, the resulting variables are set as trainable
+        self.is_training = cfg.is_training
+
+        self.setup()
 
     def setup(self, is_training):
         '''Construct the network. '''
         raise NotImplementedError('Must be implemented by the subclass.')
+    
+    def create_session(self):
+        # Set up tf session and initialize variables.
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        
+        global_init = tf.global_variables_initializer()
+        local_init = tf.local_variables_initializer()
+        
+        self.sess = tf.Session(config=config)
+        self.sess.run([global_init, local_init])
+        
+    def restore(self, data_path, var_list=None):
+        if data_path.endswith('.npy'):
+            self.load_npy(data_path, self.sess)
+        else:
+            loader = tf.train.Saver(var_list=tf.global_variables())
+            loader.restore(self.sess, data_path)
+        
+        print('Restore from {}'.format(data_path))
+    
+    def save(self, saver, save_dir, step):
+        model_name = 'model.ckpt'
+        checkpoint_path = os.path.join(save_dir, model_name)
+        
+        if not os.path.exists(save_dir):
+           os.makedirs(save_dir)
 
-    def load(self, data_path, session, ignore_missing=False):
+        saver.save(self.sess, checkpoint_path, global_step=step)
+        print('The checkpoint has been created, step: {}'.format(step))
+
+    ## Restore from .npy
+    def load_npy(self, data_path, session, ignore_missing=False):
         '''Load network weights.
         data_path: The path to the numpy-serialized network weights
         session: The current TensorFlow session

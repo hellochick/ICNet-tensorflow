@@ -1,8 +1,6 @@
 """
 This code is based on DrSleep's framework: https://github.com/DrSleep/tensorflow-deeplab-resnet 
 """
-from __future__ import print_function
-
 import argparse
 import os
 import sys
@@ -12,86 +10,28 @@ import tensorflow as tf
 import numpy as np
 
 from model import ICNet_BN
-from tools import decode_labels, prepare_label
-from image_reader import ImageReader
-
-IMG_MEAN = np.array((103.939, 116.779, 123.68), dtype=np.float32)
-
-# If you want to apply to other datasets, change following four lines
-DATA_DIR = '/PATH/TO/CITYSCAPES_DATASET'
-DATA_LIST_PATH = './list/cityscapes_train_list.txt' 
-IGNORE_LABEL = 255 # The class number of background
-INPUT_SIZE = '720, 720' # Input size for training
-
-BATCH_SIZE = 16 
-LEARNING_RATE = 1e-3
-MOMENTUM = 0.9
-NUM_CLASSES = 19
-NUM_STEPS = 60001
-POWER = 0.9
-RANDOM_SEED = 1234
-WEIGHT_DECAY = 0.0001
-PRETRAINED_MODEL = './model/icnet_cityscapes_trainval_90k_bnnomerge.npy'
-SNAPSHOT_DIR = './snapshots/'
-SAVE_NUM_IMAGES = 4
-SAVE_PRED_EVERY = 50
-
-# Loss Function = LAMBDA1 * sub4_loss + LAMBDA2 * sub24_loss + LAMBDA3 * sub124_loss
-LAMBDA1 = 0.16
-LAMBDA2 = 0.4
-LAMBDA3 = 1.0
+from utils.config import Config
+from utils.visualize import decode_labels
+from utils.image_reader import ImageReader, prepare_label
 
 def get_arguments():
-    parser = argparse.ArgumentParser(description="ICNet")
-    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE,
-                        help="Number of images sent to the network in one step.")
-    parser.add_argument("--ignore-label", type=int, default=IGNORE_LABEL,
-                        help="The index of the label to ignore during the training.")
-    parser.add_argument("--input-size", type=str, default=INPUT_SIZE,
-                        help="Comma-separated string with height and width of images.")
-    parser.add_argument("--learning-rate", type=float, default=LEARNING_RATE,
-                        help="Base learning rate for training with polynomial decay.")
-    parser.add_argument("--momentum", type=float, default=MOMENTUM,
-                        help="Momentum component of the optimiser.")
-    parser.add_argument("--num-classes", type=int, default=NUM_CLASSES,
-                        help="Number of classes to predict.")
-    parser.add_argument("--num-steps", type=int, default=NUM_STEPS,
-                        help="Number of training steps.")
+    parser = argparse.ArgumentParser(description="Reproduced ICNet")
+    
     parser.add_argument("--random-mirror", action="store_true",
                         help="Whether to randomly mirror the inputs during the training.")
     parser.add_argument("--random-scale", action="store_true",
                         help="Whether to randomly scale the inputs during the training.")
-    parser.add_argument("--restore-from", type=str, default=PRETRAINED_MODEL,
-                        help="Where restore model parameters from.")
-    parser.add_argument("--power", type=float, default=POWER,
-                        help="Decay parameter to compute the learning rate.")
-    parser.add_argument("--save-pred-every", type=int, default=SAVE_PRED_EVERY,
-                        help="Save summaries and checkpoint every often.")
-    parser.add_argument("--snapshot-dir", type=str, default=SNAPSHOT_DIR,
-                        help="Where to save snapshots of the model.")
-    parser.add_argument("--weight-decay", type=float, default=WEIGHT_DECAY,
-                        help="Regularisation parameter for L2-loss.")
     parser.add_argument("--update-mean-var", action="store_true",
                         help="whether to get update_op from tf.Graphic_Keys")
     parser.add_argument("--train-beta-gamma", action="store_true",
                         help="whether to train beta & gamma in bn layer")
+    parser.add_argument("--dataset", required=True,
+                        help="Which dataset to trained with",
+                        choices=['cityscapes', 'ade20k', 'others'])
     parser.add_argument("--filter-scale", type=int, default=1,
                         help="1 for using pruned model, while 2 for using non-pruned model.",
                         choices=[1, 2])
     return parser.parse_args()
-
-def save(saver, sess, logdir, step):
-   model_name = 'model.ckpt'
-   checkpoint_path = os.path.join(logdir, model_name)
-    
-   if not os.path.exists(logdir):
-      os.makedirs(logdir)
-   saver.save(sess, checkpoint_path, global_step=step)
-   print('The checkpoint has been created.')
-
-def load(saver, sess, ckpt_path):
-    saver.restore(sess, ckpt_path)
-    print("Restored model parameters from {}".format(ckpt_path))
 
 def get_mask(gt, num_classes, ignore_label):
     less_equal_class = tf.less_equal(gt, num_classes-1)
@@ -115,48 +55,80 @@ def create_loss(output, label, num_classes, ignore_label):
 
     return reduced_loss
 
-def main():
-    """Create the model and start the training."""
-    args = get_arguments()
-    
-    h, w = map(int, args.input_size.split(','))
-    input_size = (h, w)
-    
-    coord = tf.train.Coordinator()
-    
-    with tf.name_scope("create_inputs"):
-        reader = ImageReader(
-            DATA_DIR,
-            DATA_LIST_PATH,
-            input_size,
-            args.random_scale,
-            args.random_mirror,
-            args.ignore_label,
-            IMG_MEAN,
-            coord)
-        image_batch, label_batch = reader.dequeue(args.batch_size)
-    
-    net = ICNet_BN({'data': image_batch}, is_training=True, num_classes=args.num_classes, filter_scale=args.filter_scale)
-    
+def create_losses(net, label, cfg):
+    # Get output from different branches
     sub4_out = net.layers['sub4_out']
     sub24_out = net.layers['sub24_out']
     sub124_out = net.layers['conv6_cls']
 
-    restore_var = tf.global_variables()
-    all_trainable = [v for v in tf.trainable_variables() if ('beta' not in v.name and 'gamma' not in v.name) or args.train_beta_gamma]
-   
-    loss_sub4 = create_loss(sub4_out, label_batch, args.num_classes, args.ignore_label)
-    loss_sub24 = create_loss(sub24_out, label_batch, args.num_classes, args.ignore_label)
-    loss_sub124 = create_loss(sub124_out, label_batch, args.num_classes, args.ignore_label)
-    l2_losses = [args.weight_decay * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'weights' in v.name]
+    loss_sub4 = create_loss(sub4_out, label, cfg.param['num_classes'], cfg.param['ignore_label'])
+    loss_sub24 = create_loss(sub24_out, label, cfg.param['num_classes'], cfg.param['ignore_label'])
+    loss_sub124 = create_loss(sub124_out, label, cfg.param['num_classes'], cfg.param['ignore_label'])
+
+    l2_losses = [cfg.WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'weights' in v.name]
     
-    reduced_loss = LAMBDA1 * loss_sub4 +  LAMBDA2 * loss_sub24 + LAMBDA3 * loss_sub124 + tf.add_n(l2_losses)
+    # Calculate weighted loss of three branches, you can tune LAMBDA values to get better results.
+    reduced_loss = cfg.LAMBDA1 * loss_sub4 +  cfg.LAMBDA2 * loss_sub24 + cfg.LAMBDA3 * loss_sub124 + tf.add_n(l2_losses)
+
+    return loss_sub4, loss_sub24, loss_sub124, reduced_loss
+
+class TrainConfig(Config):
+    def __init__(self, dataset, is_training,  filter_scale=1, random_scale=None, random_mirror=None):
+        Config.__init__(self, dataset, is_training, filter_scale, random_scale, random_mirror)
+
+    # Set pre-trained weights here (You can download weight using `python script/download_weights.py`) 
+    # Note that you need to use "bnnomerge" version.
+    model_weight = './model/cityscapes/icnet_cityscapes_train_30k_bnnomerge.npy'
+    
+    # Set hyperparameters here, you can get much more setting in Config Class, see 'utils/config.py' for details.
+    LAMBDA1 = 0.16
+    LAMBDA2 = 0.4
+    LAMBDA3 = 1.0
+    BATCH_SIZE = 8
+    LEARNING_RATE = 5e-4
+
+def main():
+    """Create the model and start the training."""
+    args = get_arguments()
+
+    """
+    Get configurations here. We pass some arguments from command line to init configurations, for training hyperparameters, 
+    you can set them in TrainConfig Class.
+
+    Note: we set filter scale to 1 for pruned model, 2 for non-pruned model. The filters numbers of non-pruned
+          model is two times larger than prunde model, e.g., [h, w, 64] <-> [h, w, 32].
+    """
+    cfg = TrainConfig(dataset=args.dataset, 
+                is_training=True,
+                random_scale=args.random_scale,
+                random_mirror=args.random_mirror,
+                filter_scale=args.filter_scale)
+    cfg.display()
+
+    # Setup training network and training samples
+    train_reader = ImageReader(cfg=cfg, mode='train')
+    train_net = ICNet_BN(image_reader=train_reader, 
+                            cfg=cfg, mode='train')
+
+    loss_sub4, loss_sub24, loss_sub124, reduced_loss = create_losses(train_net, train_net.labels, cfg)
+
+    # Setup validation network and validation samples
+    with tf.variable_scope('', reuse=True):
+        val_reader = ImageReader(cfg, mode='eval')
+        val_net = ICNet_BN(image_reader=val_reader, 
+                            cfg=cfg, mode='train')
+
+        val_loss_sub4, val_loss_sub24, val_loss_sub124, val_reduced_loss = create_losses(val_net, val_net.labels, cfg)
 
     # Using Poly learning rate policy 
-    base_lr = tf.constant(args.learning_rate)
+    base_lr = tf.constant(cfg.LEARNING_RATE)
     step_ph = tf.placeholder(dtype=tf.float32, shape=())
-    learning_rate = tf.scalar_mul(base_lr, tf.pow((1 - step_ph / args.num_steps), args.power))
+    learning_rate = tf.scalar_mul(base_lr, tf.pow((1 - step_ph / cfg.TRAINING_STEPS), cfg.POWER))
     
+    # Set restore variable 
+    restore_var = tf.global_variables()
+    all_trainable = [v for v in tf.trainable_variables() if ('beta' not in v.name and 'gamma' not in v.name) or args.train_beta_gamma]
+
     # Gets moving_mean and moving_variance update operations from tf.GraphKeys.UPDATE_OPS
     if args.update_mean_var == False:
         update_ops = None
@@ -164,48 +136,30 @@ def main():
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
     with tf.control_dependencies(update_ops):
-        opt_conv = tf.train.MomentumOptimizer(learning_rate, args.momentum)
+        opt_conv = tf.train.MomentumOptimizer(learning_rate, cfg.MOMENTUM)
         grads = tf.gradients(reduced_loss, all_trainable)
         train_op = opt_conv.apply_gradients(zip(grads, all_trainable))
-        
-    # Set up tf session and initialize variables. 
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    sess = tf.Session(config=config)
-    init = tf.global_variables_initializer()
     
-    sess.run(init)
-    
-    # Saver for storing checkpoints of the model.
+    # Create session & restore weights (Here we only need to use train_net to create session since we reuse it)
+    train_net.create_session()
+    train_net.restore(cfg.model_weight, restore_var)
     saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=5)
 
-    ckpt = tf.train.get_checkpoint_state(args.snapshot_dir)
-    if ckpt and ckpt.model_checkpoint_path:
-        loader = tf.train.Saver(var_list=restore_var)
-        load_step = int(os.path.basename(ckpt.model_checkpoint_path).split('-')[1])
-        load(loader, sess, ckpt.model_checkpoint_path)
-    else:
-        print('Restore from pre-trained model...')
-        net.load(args.restore_from, sess)
-
-    # Start queue threads.
-    threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-
     # Iterate over training steps.
-    for step in range(args.num_steps):
+    for step in range(cfg.TRAINING_STEPS):
         start_time = time.time()
-        
+            
         feed_dict = {step_ph: step}
-        if step % args.save_pred_every == 0:
-            loss_value, loss1, loss2, loss3, _ = sess.run([reduced_loss, loss_sub4, loss_sub24, loss_sub124, train_op], feed_dict=feed_dict)
-            save(saver, sess, args.snapshot_dir, step)
+        if step % cfg.SAVE_PRED_EVERY == 0:
+            loss_value, loss1, loss2, loss3, val_loss_value, _ = train_net.sess.run([reduced_loss, loss_sub4, loss_sub24, loss_sub124, val_reduced_loss, train_op], feed_dict=feed_dict)
+            train_net.save(saver, cfg.SNAPSHOT_DIR, step)
         else:
-            loss_value, loss1, loss2, loss3, _ = sess.run([reduced_loss, loss_sub4, loss_sub24, loss_sub124, train_op], feed_dict=feed_dict)
+            loss_value, loss1, loss2, loss3, val_loss_value, _ = train_net.sess.run([reduced_loss, loss_sub4, loss_sub24, loss_sub124, val_reduced_loss, train_op], feed_dict=feed_dict)            
+
         duration = time.time() - start_time
-        print('step {:d} \t total loss = {:.3f}, sub4 = {:.3f}, sub24 = {:.3f}, sub124 = {:.3f} ({:.3f} sec/step)'.format(step, loss_value, loss1, loss2, loss3, duration))
-        
-    coord.request_stop()
-    coord.join(threads)
+        print('step {:d} \t total loss = {:.3f}, sub4 = {:.3f}, sub24 = {:.3f}, sub124 = {:.3f}, val_loss: {:.3f} ({:.3f} sec/step)'.\
+                    format(step, loss_value, loss1, loss2, loss3, val_loss_value, duration))
+    
     
 if __name__ == '__main__':
     main()
