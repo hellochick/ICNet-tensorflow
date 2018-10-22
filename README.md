@@ -1,4 +1,7 @@
 # ICNet_tensorflow
+## News (2018.10.22 updated):
+  Now you can try ICNet on your own image online using [ModelDepot live demo](https://modeldepot.io/hellochick/icnet) features.
+  
   This repo provides a TensorFlow-based implementation of paper "[ICNet for Real-Time Semantic Segmentation on High-Resolution Images](https://arxiv.org/abs/1704.08545)," by Hengshuang Zhao, and et. al. (ECCV'18).
   
   The model generates segmentation mask for every pixel in the image. It's based on the ResNet50 with totally three branches as auxiliary paths, see architecture below for illustration.
