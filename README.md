@@ -109,7 +109,7 @@ This implementation is different from the details descibed in ICNet paper, since
 
 In orignal paper, the authod trained the model in full kernels and then performed model-pruning techique to kill half kernels. Here **we use --filter-scale to denote whether pruning or not**. 
 
-For example, `--filter-scale=1` <-> `[h, w, 32]` and `--filter-scale=2` <-> `[h, w, 128]`. 
+For example, `--filter-scale=1` <-> `[h, w, 32]` and `--filter-scale=2` <-> `[h, w, 64]`. 
 
 ### Step by Step
 **1. Change the configurations** in [utils/config.py](./utils/config.py).
@@ -147,7 +147,7 @@ class TrainConfig(Config):
 **3.** Run following command and **decide whether to update mean/var or train beta/gamma variable**.
 ```
 python train.py --update-mean-var --train-beta-gamma \
-      --random-scale --random-mirror --dataset cityscapes --filter-scale 1
+      --random-scale --random-mirror --dataset cityscapes --filter-scale 2
 ```
 
 **Note: Be careful to use `--update-mean-var`!** Use this flag means you will update the moving mean and moving variance in batch normalization layer. This **need large batch size**, otherwise it will lead bad results. 
