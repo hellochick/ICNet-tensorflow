@@ -1,4 +1,6 @@
-# ICNet_tensorflow
+# ICNet_tensorflow  
+[![HitCount](http://hits.dwyl.com/hellochick/ICNet-tensorflow.svg)](http://hits.dwyl.com/hellochick/ICNet-tensorflow)  
+
   This repo provides a TensorFlow-based implementation of paper "[ICNet for Real-Time Semantic Segmentation on High-Resolution Images](https://arxiv.org/abs/1704.08545)," by Hengshuang Zhao, and et. al. (ECCV'18).
   
   The model generates segmentation mask for every pixel in the image. It's based on the ResNet50 with totally three branches as auxiliary paths, see architecture below for illustration.
@@ -179,4 +181,15 @@ python train.py --update-mean-var --train-beta-gamma \
       author={Zhou, Bolei and Zhao, Hang and Puig, Xavier and Fidler, Sanja and Barriuso, Adela and Torralba, Antonio},
       journal={arXiv preprint arXiv:1608.05442},
       year={2016}
+    }
+    
+If you find this implementation or the pre-trained models helpful, please consider to cite:
+
+    @misc{Yang2018,
+      author = {Hsuan-Kung, Yang},
+      title = {ICNet-tensorflow},
+      year = {2018},
+      publisher = {GitHub},
+      journal = {GitHub repository},
+      howpublished = {\url{https://github.com/hellochick/ICNet-tensorflow}}
     }
